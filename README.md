@@ -6,6 +6,12 @@ Windows 上的非官方 Codex 外观伴侣：把 Wallpaper Engine 的 **Video �
 
 这是社区运行时扩展，不是 OpenAI 官方插件，也不修改 Codex 的安装文件。当前发布为 **0.1.0 实验版**。Codex 更新可能改变页面结构，使样式或按钮定位需要适配。
 
+<p align="center">
+  <img src="docs/preview.jpg" alt="Codex 窗口背景为 Wallpaper Engine 视频壁纸，右侧是壁纸与外观设置抽屉" width="900">
+</p>
+
+> 预览图中的壁纸：*Little Red Riding Hood*，作者 [betidraws](https://www.pexels.com/)，来源 [Pexels](https://www.pexels.com/license/)（Pexels 授权，免费商用）。壁纸素材不属于本项目，权利归原作者。
+
 ## 为什么用它
 
 - **不压缩、不转码、不限大小。** 直接按字节区间读取壁纸原文件，4K/120 帧照样播放 —— 不会先转成 1080p，也没有单文件体积上限。
@@ -150,3 +156,9 @@ Codex 接入层为本项目**独立实现**。两者的运行环境与技术路�
 OpenAI、Codex、ChatGPT、Wallpaper Engine 等名称与标识归其权利人所有；本项目的 MIT 许可**不授予**任何第三方软件、Wallpaper Engine 订阅壁纸或游戏/动漫素材的使用与分发权利。发行包内不含任何第三方程序文件或壁纸资源。
 
 本项目为非官方社区扩展，与 OpenAI 及 Wallpaper Engine 的开发者无隶属关系，也未获其背书。
+
+## 关于这个项目
+
+需求、取舍与验收由一位**没有编程基础**的使用者决定；代码由 AI 编程代理（DeepSeek Harness 与 Codex）按指令生成并迭代。
+
+所有改动经过单元测试（33 个用例）与 CI 检查，并在 Windows 上完成了真实的安装、运行、切换壁纸与卸载验证。`VALIDATION.md` 记录了哪些项目已验证、哪些仍需真机验收。

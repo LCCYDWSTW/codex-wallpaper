@@ -4,6 +4,12 @@
 
 An unofficial Windows companion that plays local Wallpaper Engine **Video** wallpapers behind Codex, with glass panels and a settings drawer. **0.1.0 is experimental.** It does not patch Codex installation files and is not an OpenAI product or supported plugin API. Codex updates may break integration.
 
+<p align="center">
+  <img src="docs/preview.jpg" alt="Codex with a Wallpaper Engine video wallpaper behind it and the wallpaper settings drawer open" width="900">
+</p>
+
+> Preview wallpaper: *Little Red Riding Hood* by [betidraws](https://www.pexels.com/) via [Pexels](https://www.pexels.com/license/) (Pexels License, free for commercial use). The artwork is not part of this project; rights remain with its author.
+
 ## Why this one
 
 - **No re-encode, no size cap.** Videos are streamed from the original file with byte-range reads, so 4K/120 footage plays as-is — no 1080p downscale, no per-file size limit.
@@ -79,3 +85,9 @@ This project's source code is under the [MIT License](LICENSE), Copyright (c) 20
 OpenAI, Codex, ChatGPT and Wallpaper Engine names and marks belong to their respective owners. This project's MIT licence grants **no** rights to any third-party software, Wallpaper Engine workshop wallpapers, or game/anime artwork. The release contains no third-party program files or wallpaper assets.
 
 This is an unofficial community extension. It is not affiliated with or endorsed by OpenAI or by the makers of Wallpaper Engine.
+
+## About this project
+
+Requirements, trade-offs and acceptance decisions were made by a person **with no programming background**; the code was generated and iterated by AI coding agents (DeepSeek Harness and Codex) following those instructions.
+
+Every change passes unit tests (33 cases) and CI, and the release was installed, run, exercised with real wallpaper switching, and uninstalled on Windows. `VALIDATION.md` records what has been verified and what still needs real-machine acceptance.
