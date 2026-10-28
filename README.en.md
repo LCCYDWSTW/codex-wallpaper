@@ -4,6 +4,15 @@
 
 An unofficial Windows companion that plays local Wallpaper Engine **Video** wallpapers behind Codex, with glass panels and a settings drawer. **0.1.0 is experimental.** It does not patch Codex installation files and is not an OpenAI product or supported plugin API. Codex updates may break integration.
 
+## Why this one
+
+- **No re-encode, no size cap.** Videos are streamed from the original file with byte-range reads, so 4K/120 footage plays as-is — no 1080p downscale, no per-file size limit.
+- **Switching is immediate.** Changing between video wallpapers does not require restarting Codex.
+- **Reuses your existing library.** Scans the Wallpaper Engine `431960` workshop folder and can follow the current desktop wallpaper; nothing to re-download or import.
+- **Zero runtime dependencies.** No `npm install`, no third-party runtime packages.
+
+> Most comparable tools downscale video to 1080p or cap single files (commonly 128 MB). This project does neither.
+
 ## Requirements and installation
 
 - Windows 10/11, the current user's `OpenAI.Codex` MSIX package.
