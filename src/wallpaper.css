@@ -1,0 +1,63 @@
+html[data-codex-wallpaper="on"] {
+  --color-surface: transparent !important;
+  --color-surface-secondary: rgb(14 23 35 / 35%) !important;
+  --color-surface-tertiary: rgb(14 23 35 / 28%) !important;
+  --app-color-background-surface: transparent !important;
+  --app-color-background-surface-under: transparent !important;
+  --color-background-panel: rgb(14 23 35 / 38%) !important;
+  --color-text: #f0f4fa !important;
+  --color-text-secondary: #c4ccd8 !important;
+  --color-text-tertiary: #aab7c9 !important;
+  --color-icon: #e2eaf5 !important;
+  --color-border: rgb(214 234 255 / 18%) !important;
+  --color-background-composer-primary: rgb(15 23 36 / 45%) !important;
+  --color-text-composer-primary: #f0f4fa !important;
+}
+html[data-codex-wallpaper="on"], html[data-codex-wallpaper="on"] body,
+html[data-codex-wallpaper="on"] #root { background: transparent !important; }
+#cw-background { position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none; background:#0d1520; }
+#cw-background video, #cw-poster { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; }
+#cw-poster[hidden] { display:none; }
+#cw-scrim { position:absolute; inset:0; background:#060c16; opacity:.38; pointer-events:none; will-change:opacity; }
+#cw-background::after { content:""; position:absolute; inset:0; background:linear-gradient(120deg, rgb(6 13 24 / 15%), transparent 65%); }
+html[data-codex-wallpaper="on"] body { isolation:isolate; }
+html[data-codex-wallpaper="on"] :is([data-app-shell-frame],[data-app-shell-page-surface], [class*="_Workspace_"], [class*="_WorkspaceContent_"], [class*="_MainContentSurface_"], [class*="_MainContentFrame_"], [class*="_PageSurface_"], [class*="_FullHeightPageSurface_"], .thread-pane, .thread-scroll-container) { background:transparent !important; }
+html[data-codex-wallpaper="on"] :is(.app-shell-left-panel, [data-testid="app-shell-floating-left-panel"]) {
+  background:rgb(13 22 35 / var(--cw-panel, .36)) !important;
+  backdrop-filter:blur(var(--cw-blur, 22px)) saturate(135%);
+  border:1px solid rgb(225 240 255 / 19%) !important;
+  border-radius:18px; box-shadow:inset 0 1px 0 rgb(255 255 255 / 12%), 0 12px 36px rgb(0 0 0 / 14%);
+}
+html[data-codex-wallpaper="on"] :is(.composer-surface-chrome, [class*="_floatingSurface_"], [class*="_canvasSurface_"], .reply-chain-composer) {
+  background:rgb(13 22 35 / var(--cw-panel, .36)) !important;
+  backdrop-filter:blur(var(--cw-blur, 22px)) saturate(140%);
+  border:1px solid rgb(225 240 255 / 24%) !important;
+  box-shadow:inset 0 1px 0 rgb(255 255 255 / 15%), 0 12px 40px rgb(0 0 0 / 24%) !important;
+}
+html[data-codex-wallpaper="on"] :is([class*="_MainContentFrame_"], [data-app-shell-page-surface="true"]) { border:1px solid rgb(220 236 255 / 15%); border-radius:18px; }
+html[data-codex-wallpaper="on"] :is([role="dialog"],[role="menu"],[data-radix-popper-content-wrapper]) { --color-surface: #172232 !important; --color-surface-elevated-secondary: #1c293b !important; }
+html[data-codex-wallpaper="on"] [class*="_MainContentTopFade_"] { opacity:0 !important; }
+#cw-controls { position:fixed; inset:0; z-index:2147483000; pointer-events:none; font:13px/1.5 "Segoe UI","Microsoft YaHei UI",sans-serif; color:#f0f5ff; -webkit-app-region:no-drag; }
+#cw-controls button, #cw-controls select { font:inherit; color:inherit; cursor:pointer; }
+#cw-toggle { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; flex-shrink:0; padding:0; border:1px solid transparent; border-radius:8px; color:var(--color-text-toolbar-action, #c4ccd8); background:transparent; cursor:pointer; pointer-events:auto; -webkit-app-region:no-drag; }
+#cw-toggle:hover, #cw-toggle[aria-expanded="true"] { background:rgb(160 189 222 / 15%); color:#f0f5ff; }
+#cw-toggle:focus-visible { outline:2px solid #9bc8ff; outline-offset:2px; }
+#cw-toggle[data-floating="true"] { position:fixed; right:146px; top:56px; }
+#cw-toggle svg { display:block; }
+#cw-backdrop { position:absolute; inset:var(--cw-drawer-top, 92px) 0 0; border:0; padding:0; background:rgb(0 0 0 / 10%); opacity:0; visibility:hidden; pointer-events:none; transition:opacity 180ms ease, visibility 0s 220ms; }
+#cw-panel { position:absolute; top:var(--cw-drawer-top, 92px); right:0; bottom:0; width:min(360px, calc(100vw - 24px)); box-sizing:border-box; overflow-y:auto; overscroll-behavior:contain; padding:24px; border-radius:18px 0 0 18px; border:1px solid #d7e9ff44; border-right:0; background:#111e30db; backdrop-filter:blur(30px) saturate(140%); box-shadow:-16px 0 64px #0005,inset 0 1px #ffffff24; transform:translateX(100%); opacity:0; visibility:hidden; pointer-events:none; transition:transform 220ms cubic-bezier(.2,.8,.2,1), opacity 160ms ease, visibility 0s 220ms; }
+#cw-controls[data-open="true"] #cw-panel { transform:translateX(0); opacity:1; visibility:visible; pointer-events:auto; transition-delay:0s; }
+#cw-controls[data-open="true"] #cw-backdrop { opacity:1; visibility:visible; pointer-events:auto; transition-delay:0s; }
+.cw-drawer-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:6px; }
+#cw-close { display:flex; align-items:center; justify-content:center; width:30px; height:30px; padding:0; background:transparent; border:0; border-radius:8px; color:#c4ccd8; cursor:pointer; }
+#cw-close:hover { background:#ffffff14; color:#fff; }
+@media (prefers-reduced-motion:reduce) { #cw-panel, #cw-backdrop { transition:none; } }
+#cw-panel h3 { margin:0 0 5px; color:#fff; font-size:17px; font-weight:600; }
+#cw-panel p { margin:0 0 16px; color:#adbed4; font-size:12px; }
+#cw-panel label { display:block; margin:15px 0 5px; }
+#cw-panel select { width:100%; background:#26374c; border:1px solid #a8c4e644; padding:8px; border-radius:8px; }
+#cw-panel input[type="range"] { width:100%; accent-color:#9bc8ff; }
+#cw-panel .cw-row { display:flex; gap:8px; margin-top:17px; flex-wrap:wrap; }
+#cw-panel .cw-row button { border:1px solid #acc9ef44; border-radius:9px; background:#6486ad2b; padding:7px 12px; }
+#cw-panel .cw-row button:hover { background:#6486ad66; }
+#cw-status { display:block; margin-top:13px; color:#b0c5df; font-size:11px; }

@@ -1,0 +1,13 @@
+/dist/
+/node_modules/
+/config.json
+/settings.json
+/runtime.json
+/cache/
+/test-profile/
+/startup-backup/
+*.log
+*.bak
+*.tmp
+.DS_Store
+Thumbs.db

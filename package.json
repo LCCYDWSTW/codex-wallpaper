@@ -1,0 +1,14 @@
+{
+  "name": "codex-wallpaper",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Unofficial Windows companion for video wallpapers and glass styling in Codex",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test",
+    "check": "node scripts/check.mjs",
+    "package": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/package.ps1"
+  }
+}
