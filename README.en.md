@@ -47,4 +47,26 @@ Run `npm test`, `npm run check`, then `npm run package` on Windows. The allowlis
 
 See [VALIDATION.md](VALIDATION.md) for actual verification scope. The prototype was used on Codex 26.1021.3705.0 and 26.1023.6123.0; that does not establish compatibility with every build or PC.
 
-Inspired by [dsh-wallpaper-engine](https://github.com/elysia395/dsh-wallpaper-engine). The Codex integration was independently written; no upstream code, proprietary program files, logos or wallpaper assets are included. Source code is under [MIT](LICENSE). Third-party software and media retain their respective rights.
+## Acknowledgements and licence
+
+### Inspiration
+
+The feature concept comes from **dsh-wallpaper-engine**, a wallpaper plugin for DeepSeek Harness:
+
+- Project: [github.com/elysia395/dsh-wallpaper-engine](https://github.com/elysia395/dsh-wallpaper-engine)
+- Author: elysia395
+- Licence: MIT License, Copyright (c) 2026 elysia395
+
+The Codex integration here is an **independent implementation**. The two run in different environments: that project is a plugin inside DSH's own web server and React client, while this project is a standalone process that attaches to the Codex app over a local CDP debugging interface and streams media itself. They share no source code.
+
+**This release contains no source code, binaries, icons or wallpaper assets from that project.** If you want wallpaper support inside DeepSeek Harness, use the original project above.
+
+### Project licence
+
+This project's source code is under the [MIT License](LICENSE), Copyright (c) 2026 Codex Wallpaper contributors.
+
+### Third-party rights
+
+OpenAI, Codex, ChatGPT and Wallpaper Engine names and marks belong to their respective owners. This project's MIT licence grants **no** rights to any third-party software, Wallpaper Engine workshop wallpapers, or game/anime artwork. The release contains no third-party program files or wallpaper assets.
+
+This is an unofficial community extension. It is not affiliated with or endorsed by OpenAI or by the makers of Wallpaper Engine.

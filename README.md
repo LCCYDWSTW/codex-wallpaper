@@ -120,6 +120,24 @@ npm run package
 
 ## 致谢与许可
 
-功能构想受 [dsh-wallpaper-engine](https://github.com/elysia395/dsh-wallpaper-engine) 启发。本项目独立编写 Codex 接入逻辑，没有包含该项目源代码、Codex 程序文件、品牌图标或壁纸素材。
+### 灵感来源
 
-代码采用 [MIT License](LICENSE)。OpenAI、Codex、Wallpaper Engine 等名称及各壁纸的权利归其权利人所有；代码许可不授予第三方软件或壁纸的使用与分发权利。
+本项目的功能构想来自 **dsh-wallpaper-engine** —— 一个 DeepSeek Harness 的壁纸插件：
+
+- 项目：[github.com/elysia395/dsh-wallpaper-engine](https://github.com/elysia395/dsh-wallpaper-engine)
+- 作者：elysia395
+- 许可：MIT License，Copyright (c) 2026 elysia395
+
+Codex 接入层为本项目**独立实现**。两者的运行环境与技术路径不同：该项目作为插件运行在 DSH 自身的 Web 服务与 React 客户端中，本项目则是独立进程，通过本地 CDP 调试接口连接 Codex 应用并提供媒体流。两者没有共享源代码。
+
+**本发行包不包含该项目的任何源代码、二进制文件、图标或壁纸素材。** 如果你希望在 DeepSeek Harness 中直接使用壁纸功能，请前往上述项目获取原版。
+
+### 本项目许可
+
+本项目代码采用 [MIT License](LICENSE)，Copyright (c) 2026 Codex Wallpaper contributors。
+
+### 第三方权利
+
+OpenAI、Codex、ChatGPT、Wallpaper Engine 等名称与标识归其权利人所有；本项目的 MIT 许可**不授予**任何第三方软件、Wallpaper Engine 订阅壁纸或游戏/动漫素材的使用与分发权利。发行包内不含任何第三方程序文件或壁纸资源。
+
+本项目为非官方社区扩展，与 OpenAI 及 Wallpaper Engine 的开发者无隶属关系，也未获其背书。
