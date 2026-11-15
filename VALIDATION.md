@@ -135,9 +135,9 @@ Scene projects are now rendered by the vendored WebWallGL engine instead of bein
 excluded from the library.
 
 - `inventory()` reports **198** playable projects from this machine's workshop
-  folder: 72 video and 126 scene. The folder holds 213 projects; the 9 web projects
-  stay unsupported (see below) and 2 scene folders were skipped because their
-  `scene.pkg` is missing.
+  folder: 72 video and 126 scene. The folder holds 213 projects; 9 web projects stay
+  unsupported (see below), 2 scene folders were skipped because their `scene.pkg` is
+  missing, and 4 older projects declare no `type` field at all.
 - The page CSP (`default-src 'none'`) has no `connect-src` entry for
   `codex-wallpaper.invalid`, so `fetch()` and `XMLHttpRequest` to the media origin
   fail with `TypeError: Failed to fetch`, while `media-src`/`img-src` let the video

@@ -85,7 +85,6 @@ async function serve(cdp,event){
     let file=null,poster=false,ranged=false;
     if(kind==='poster'){poster=true;file=item.preview;}
     else if(kind==='media'){if(item.type!=='video')throw Error('not found');ranged=true;file=fs.existsSync(item.cached)?item.cached:item.file;}
-    else if(kind==='scene'){if(item.type!=='scene')throw Error('not found');file=item.file;}
     if(!file)throw Error('not found');
     handle=await fs.promises.open(file,'r');
     const stat=await handle.stat(),range=Object.entries(event.request.headers).find(([key])=>key.toLowerCase()==='range')?.[1];
