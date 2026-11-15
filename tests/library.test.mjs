@@ -21,10 +21,14 @@ test('inventory filters invalid projects and prevents traversal', t=>{
   project('2',{type:'video',file:'../outside.mp4'});
   project('3',{type:'scene',file:'video.mp4'});
   project('4',{type:'video',file:'missing.mp4'},false);
+  project('5',{type:'video',title:'Rated',file:'video.mp4',contentrating:'Mature',tags:['Anime',7,'Blue Archive']});
   const items=inventory([root,root,path.join(temp,'missing')],path.join(temp,'cache'));
-  assert.equal(items.length,1);assert.equal(items[0].title,'Example');assert.equal(items[0].preview,null);
-  assert.match(items[0].id,/^[a-f0-9]{24}$/);
-  assert.equal(items[0].id,inventory([root],path.join(temp,'cache'))[0].id);
+  assert.equal(items.length,2);
+  const example=items.find(item=>item.title==='Example'),rated=items.find(item=>item.title==='Rated');
+  assert.equal(example.preview,null);assert.equal(example.rating,'');assert.deepEqual(example.tags,[]);
+  assert.equal(rated.rating,'Mature');assert.deepEqual(rated.tags,['Anime','Blue Archive']);
+  assert.match(example.id,/^[a-f0-9]{24}$/);
+  assert.equal(example.id,inventory([root],path.join(temp,'cache')).find(item=>item.title==='Example').id);
 });
 test('configuration accepts BOM and refuses relative media roots',t=>{
   const temp=fs.mkdtempSync(path.join(os.tmpdir(),'cw-config-'));

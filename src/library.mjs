@@ -30,7 +30,16 @@ export function inventory(roots, cacheDir) {
             if (within(folder, candidate) && /\.(png|jpe?g|gif|webp)$/i.test(candidate) && fs.statSync(candidate).size <= 10 * 1024 * 1024) preview = candidate;
           } catch {}
         }
-        list.push({id, title: String(project.title || entry.name), file, size: stat.size, cached, preview});
+        list.push({
+          id,
+          title: String(project.title || entry.name),
+          file,
+          size: stat.size,
+          cached,
+          preview,
+          rating: typeof project.contentrating === 'string' ? project.contentrating : '',
+          tags: Array.isArray(project.tags) ? project.tags.filter(tag => typeof tag === 'string').slice(0, 8) : []
+        });
       } catch {}
     }
   }

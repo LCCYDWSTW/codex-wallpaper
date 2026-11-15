@@ -16,3 +16,15 @@ test('panel/blur sliders update both inline glass surfaces and CSS-controlled su
   assert.match(renderer, /root\.style\.setProperty\('--cw-blur',`\$\{config\.blur\}px`\)/);
   assert.match(renderer, /root\.style\.removeProperty\(name\)/);
 });
+
+test('library panel wires cards, rating filter and a rescan request', () => {
+  const renderer = fs.readFileSync(path.join(root, 'src/renderer.js'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'src/wallpaper.css'), 'utf8');
+  assert.match(renderer, /id="cw-grid"/);
+  assert.match(renderer, /_rescan:true/);
+  assert.match(renderer, /poster\/'\+encodeURIComponent\(item\.id\)/);
+  assert.match(renderer, /textContent=item\.title/);
+  assert.match(css, /\.cw-grid\s*\{/);
+  assert.match(css, /\.cw-card\[aria-selected="true"\]/);
+  assert.match(css, /\[data-view="list"\]/);
+});

@@ -22,19 +22,35 @@ let boundEndpoint=null;
 const log=message=>console.log(new Date().toISOString(),message);
 function selected(){try{const cfg=JSON.parse(fs.readFileSync(weConfig,'utf8'));for(const value of Object.values(cfg)){const file=value?.general?.wallpaperconfig?.selectedwallpapers?.Monitor0?.file;if(file)return state.library.find(item=>path.normalize(item.file).toLowerCase()===path.normalize(file).toLowerCase())?.id;}}catch{}return null;}
 state.library=inventory(workshopDirs,cacheDir);if(!state.library.length)throw Error('No video wallpapers found in configured workshopDirs. Download a Video wallpaper in Wallpaper Engine and try again.');
-state.config={enabled:true,wallpaperId:selected()||state.library[0].id,shade:.38,blur:22,panel:.36,paused:false,followDesktop:true};
+state.config={enabled:true,wallpaperId:selected()||state.library[0].id,shade:.38,blur:22,panel:.36,paused:false,followDesktop:true,view:'cards',sound:false,volume:.6};
 try{Object.assign(state.config,sanitizeSettings(JSON.parse(fs.readFileSync(settingsFile,'utf8'))));}catch{}
 if(!state.library.some(item=>item.id===state.config.wallpaperId))state.config.wallpaperId=selected()||state.library[0].id;
 function persist(){clearTimeout(saveTimer);saveTimer=null;const text=JSON.stringify(state.config,null,2);saveQueue=saveQueue.catch(()=>{}).then(async()=>{const temp=settingsFile+'.tmp';await fs.promises.writeFile(temp,text);await fs.promises.rename(temp,settingsFile);metrics.settingsWrites++;}).catch(error=>log('settings: '+error.message));return saveQueue;}
 const scheduleSave=()=>{clearTimeout(saveTimer);saveTimer=setTimeout(persist,100);};
-function boot(){return{config:{...state.config},library:state.library.map(({id,title})=>({id,title})),css:fs.readFileSync(path.join(dir,'wallpaper.css'),'utf8')};}
+function boot(){return{config:{...state.config},library:state.library.map(({id,title,rating,tags,preview,size})=>({id,title,rating,tags,preview:Boolean(preview),size})),css:fs.readFileSync(path.join(dir,'wallpaper.css'),'utf8')};}
 const renderer=fs.readFileSync(path.join(dir,'renderer.js'),'utf8'),script=()=>buildBootScript(renderer,boot());
 async function broadcast(patch,source){for(const entry of state.connections.values())if(entry!==source)try{await entry.cdp.evaluate(`window.__codexWallpaper?.updateConfig(${JSON.stringify(patch)})`);}catch(error){log('config: '+error.message);}}
+async function pushLibrary(message){const payload=boot();for(const entry of state.connections.values()){try{await entry.cdp.evaluate(`window.__codexWallpaper?.update(${JSON.stringify(payload)})`);if(message)await entry.cdp.evaluate(`window.__codexWallpaper?.loading(${JSON.stringify(message)})`);}catch(error){log('library: '+error.message);}}}
+async function rescan(source){
+  if(state.closed)return;
+  let next;
+  try{next=inventory(workshopDirs,cacheDir);}catch(error){log('rescan: '+error.message);return;}
+  if(!next.length){try{await source.cdp.evaluate(`window.__codexWallpaper?.loading(${JSON.stringify('没有扫描到视频壁纸，请检查 workshopDirs 与 Wallpaper Engine 库')})`);}catch{}return;}
+  const previous=state.library.length,delta=next.length-previous;
+  state.library=next;
+  if(!next.some(item=>item.id===state.config.wallpaperId))state.config.wallpaperId=selected()||next[0].id;
+  scheduleSave();
+  log(`Rescanned: ${next.length} video wallpapers (${delta>=0?'+':''}${delta})`);
+  await pushLibrary(`已刷新：${next.length} 个视频壁纸`);
+}
 function change(payload,source){
   let incoming;try{incoming=JSON.parse(payload);}catch{return;}if(!incoming||typeof incoming!=='object')return;
-  if(typeof incoming._mediaError==='string'){void compatible(incoming._mediaError,source);return;}metrics.configMessages++;
-  const patch={};for(const key of ['enabled','paused','followDesktop'])if(typeof incoming[key]==='boolean')patch[key]=incoming[key];
-  for(const[key,min,max]of [['shade',.1,.8],['panel',.12,.85],['blur',0,40]])if(Number.isFinite(incoming[key]))patch[key]=Math.min(max,Math.max(min,incoming[key]));
+  if(typeof incoming._mediaError==='string'){void compatible(incoming._mediaError,source);return;}
+  if(incoming._rescan===true){void rescan(source);return;}
+  metrics.configMessages++;
+  const patch={};for(const key of ['enabled','paused','followDesktop','sound'])if(typeof incoming[key]==='boolean')patch[key]=incoming[key];
+  for(const[key,min,max]of [['shade',.1,.8],['panel',.12,.85],['blur',0,40],['volume',0,1]])if(Number.isFinite(incoming[key]))patch[key]=Math.min(max,Math.max(min,incoming[key]));
+  if(incoming.view==='cards'||incoming.view==='list')patch.view=incoming.view;
   if(typeof incoming.wallpaperId==='string'&&state.library.some(item=>item.id===incoming.wallpaperId))patch.wallpaperId=incoming.wallpaperId;
   if(!Object.keys(patch).length)return;Object.assign(state.config,patch);
   if(state.config.followDesktop){const id=selected();if(id&&id!==state.config.wallpaperId){state.config.wallpaperId=id;patch.wallpaperId=id;void source.cdp.evaluate(`window.__codexWallpaper?.updateConfig(${JSON.stringify({wallpaperId:id})})`).catch(error=>log(error.message));}}

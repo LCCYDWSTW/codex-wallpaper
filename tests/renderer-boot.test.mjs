@@ -10,6 +10,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 test('generated renderer script executes with every hostile title character', () => {
   const renderer = fs.readFileSync(path.join(root, 'src/renderer.js'), 'utf8');
+  // The injected instance must match the version the script expects before it takes the update path.
+  const version = Number(/__codexWallpaper\?\.version === (\d+)/.exec(renderer)[1]);
   const titles = [
     "single-quote replacement $'",
     'backtick replacement $`',
@@ -28,7 +30,7 @@ test('generated renderer script executes with every hostile title character', ()
   const sandbox = {
     window: {
       __codexWallpaper: {
-        version: 4,
+        version,
         update(value) {seen.push(value);}
       }
     }

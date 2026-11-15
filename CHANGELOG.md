@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Wallpaper library panel
+
+- Replace the wallpaper dropdown with a card wall: each card shows the project's
+  `preview` image and title, the current wallpaper is highlighted, and the panel
+  offers a card/list view toggle.
+- Add title and tag search plus a content-rating filter that appears when the
+  library contains a non-`Everyone` project.
+- Add a Refresh button that rescans the configured workshop directories without
+  restarting Codex; newly subscribed videos appear immediately and
+  `runtime.json` `videoCount` follows the rescan.
+- Add optional wallpaper audio with a volume slider. Playback still starts muted.
+- `inventory()` now reports `contentrating` and `tags`; settings accept `view`,
+  `sound` and `volume`. The renderer payload version is 7.
+
 ### Verification notes
 
 - Sign-in startup verified on 2026-11-15 with Codex MSIX 26.1027.3384.0 and

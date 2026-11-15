@@ -97,9 +97,34 @@ Node.js 24.20.0:
   `hidden` and playback was paused. Both are the documented behaviour while the
   window is not visible.
 - `launcher-error.log` and `host-error.log` gained no entries from this sign-in.
-- The test suite passed on the same machine: 32 tests run, one skipped because its
-  child-process shutdown path is exercised only on Linux.
+- The test suite passed on the same machine, with the Linux-only child-process
+  shutdown case skipped.
 
 Not covered by this run: uninstall on a separate Windows account or PC, UI
 compatibility across other Codex builds, locales and layouts, optional FFmpeg
 conversion on other GPU drivers, and full-window reload.
+
+## Library panel verification — 2026-11-15
+
+Checks after replacing the wallpaper dropdown with a thumbnail card wall, a rescan
+button, search, a content-rating filter and an optional audio toggle:
+
+- `npm test` passed 34 of 35 cases on this machine; the skipped case is the
+  Linux-only child-process shutdown test. `npm run check` passed.
+- New tests cover the `view`/`sound`/`volume` settings, `contentrating` and `tags`
+  extraction in `inventory()`, the renderer's `_rescan` request, and the card grid
+  styles.
+- Live check on the installed build (Codex MSIX 26.1027.3384.0, Node.js 24.20.0,
+  72 video projects): the injected panel rendered 72 cards whose titles came from
+  `project.json`; searching for a title fragment narrowed the grid and the counter
+  with it; Refresh rescanned and returned the same count in the status line;
+  picking a card moved the streamed media element to that wallpaper id.
+- Layout was inspected by rendering the panel markup and `wallpaper.css` in
+  headless Chrome in both card and list views. That step was necessary because the
+  Codex window was closed to the tray during the check, and a hidden window does
+  not composite frames even when the page is forced active. Those screenshots are
+  not committed.
+
+Not covered by this run: the panel inside a visible Codex window on a real
+display, Scene and Web wallpapers (still unsupported), and audible output through
+real speakers.

@@ -15,6 +15,8 @@ An unofficial Windows companion that plays local Wallpaper Engine **Video** wall
 - **No re-encode, no size cap.** Videos are streamed from the original file with byte-range reads, so 4K/120 footage plays as-is — no 1080p downscale, no per-file size limit.
 - **Switching is immediate.** Changing between video wallpapers does not require restarting Codex.
 - **Reuses your existing library.** Scans the Wallpaper Engine `431960` workshop folder and can follow the current desktop wallpaper; nothing to re-download or import.
+- **Pick from a thumbnail wall.** The side panel lists every video wallpaper as a card built from the project's `preview` image, with a list view, title/tag search, an optional content-rating filter and the current selection highlighted.
+- **Rescan without restarting.** The panel's Refresh button re-reads the configured workshop folders, so newly subscribed videos appear immediately.
 - **Zero runtime dependencies.** No `npm install`, no third-party runtime packages.
 
 > Most comparable tools downscale video to 1080p or cap single files (commonly 128 MB). This project does neither.
@@ -36,7 +38,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -EnableSta
 
 Installation is per-user at `%LOCALAPPDATA%\CodexWallpaper\app`. Use the new **Codex Wallpaper** desktop/Start menu shortcut. Node and Steam library paths are detected. Override with `-NodePath`, `-WorkshopDirectories`, `-WallpaperEngineDirectory`, or `-CodexProfile`. `-PlanOnly` prints the plan without changing the system. See the Chinese README for a complete example.
 
-Settings and logs are kept in `%LOCALAPPDATA%\CodexWallpaper`, outside the source tree. `config.example.json` documents path fields. Changing library paths or subscribing to new videos requires restarting Codex and its helper.
+Settings and logs are kept in `%LOCALAPPDATA%\CodexWallpaper`, outside the source tree. `config.example.json` documents path fields. Subscribing to new videos only needs the panel's Refresh button; changing library paths still requires restarting Codex and its helper.
 
 ## Startup and limitations
 

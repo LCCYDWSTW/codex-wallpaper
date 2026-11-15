@@ -15,12 +15,13 @@ export function within(folder, file) {
 export function sanitizeSettings(input = {}) {
   const clean = {};
   if (!input || typeof input !== 'object') return clean;
-  for (const key of ['enabled', 'paused', 'followDesktop']) {
+  for (const key of ['enabled', 'paused', 'followDesktop', 'sound']) {
     if (typeof input[key] === 'boolean') clean[key] = input[key];
   }
-  for (const [key, min, max] of [['shade', .1, .8], ['panel', .12, .85], ['blur', 0, 40]]) {
+  for (const [key, min, max] of [['shade', .1, .8], ['panel', .12, .85], ['blur', 0, 40], ['volume', 0, 1]]) {
     if (Number.isFinite(input[key])) clean[key] = Math.min(max, Math.max(min, input[key]));
   }
+  if (input.view === 'cards' || input.view === 'list') clean.view = input.view;
   if (typeof input.wallpaperId === 'string') clean.wallpaperId = input.wallpaperId;
   return clean;
 }
