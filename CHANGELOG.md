@@ -16,6 +16,13 @@
 - Add lightweight diagnostics to `status()`: visibility/focus flips, video
   play/pause transitions, long-task count and longest task, glass scans and their
   cost, plus decoded/dropped video frames.
+- Slider drags no longer re-blur the whole window on every pointer move: the blur
+  radius and panel tint are applied when the drag ends. Measured on this machine,
+  dragging the blur slider went from p50 93 ms / p95 224 ms per frame to p50 7 ms /
+  p95 24 ms, and grid scrolling from p50 9.3 ms / p95 21.7 ms to p50 7.3 ms /
+  p95 9.5 ms.
+- The drawer itself no longer applies `backdrop-filter` (it was 86% opaque anyway),
+  and cards use paint containment.
 ### Scene wallpapers
 
 - Play Wallpaper Engine **scene** projects (`project.json` + `scene.pkg`) instead

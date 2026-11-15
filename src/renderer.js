@@ -1,6 +1,6 @@
 (() => {
   const boot = __CW_BOOT__;
-  if (window.__codexWallpaper?.version === 19) { window.__codexWallpaper.update(boot); return; }
+  if (window.__codexWallpaper?.version === 20) { window.__codexWallpaper.update(boot); return; }
   window.__codexWallpaper?.dispose();
   if (!document.body || !document.getElementById('root')) return;
   let config={...boot.config},library=boot.library,disposed=false,frame=0,saveTimer=0,dragTimer=0,scanning=0;
@@ -56,11 +56,16 @@
     frame=0;if(disposed)return;frameUpdates++;if(painted.enabled!==config.enabled){root.dataset.codexWallpaper=config.enabled?'on':'off';background.hidden=!config.enabled;}
     const shade=String(config.shade),color=`rgb(13 22 35 / ${config.panel})`,filter=`blur(${config.blur}px) saturate(140%)`;
     // Keep CSS-driven surfaces in sync with panels updated through inline styles.
-    if(painted.panel!==config.panel)root.style.setProperty('--cw-panel',String(config.panel));
-    if(painted.blur!==config.blur)root.style.setProperty('--cw-blur',`${config.blur}px`);
+    // Re-blurring the Codex panels is a compositor-bound operation: writing a new blur
+    // radius on every pointer move stalls the frame (measured 90-280 ms per frame here).
+    // Keep the previous radius while dragging and apply the new one on release.
+    if(!dragging){
+      if(painted.panel!==config.panel)root.style.setProperty('--cw-panel',String(config.panel));
+      if(painted.blur!==config.blur)root.style.setProperty('--cw-blur',`${config.blur}px`);
+    }
     if(scrim.style.opacity!==shade)scrim.style.opacity=shade;
-    if(glassDirty||painted.enabled!==config.enabled||painted.blur!==config.blur||painted.panel!==config.panel||painted.glass!==config.glass)for(const[element,original]of glass){if(!config.enabled){restoreElement(element,original);continue;}if(glassDirty||painted.enabled!==config.enabled||painted.panel!==config.panel)element.style.setProperty('background-color',color,'important');if(glassDirty||painted.enabled!==config.enabled||painted.blur!==config.blur||painted.glass!==config.glass){if(config.glass===false)element.style.removeProperty('backdrop-filter');else element.style.backdropFilter=filter;}}
-    painted={enabled:config.enabled,blur:config.blur,panel:config.panel,glass:config.glass};glassDirty=false;
+    if(!dragging&&(glassDirty||painted.enabled!==config.enabled||painted.blur!==config.blur||painted.panel!==config.panel||painted.glass!==config.glass))for(const[element,original]of glass){if(!config.enabled){restoreElement(element,original);continue;}if(glassDirty||painted.enabled!==config.enabled||painted.panel!==config.panel)element.style.setProperty('background-color',color,'important');if(glassDirty||painted.enabled!==config.enabled||painted.blur!==config.blur||painted.glass!==config.glass){if(config.glass===false)element.style.removeProperty('backdrop-filter');else element.style.backdropFilter=filter;}}
+    if(!dragging){painted={enabled:config.enabled,blur:config.blur,panel:config.panel,glass:config.glass};glassDirty=false;}else{painted={...painted,enabled:config.enabled,glass:config.glass};}
     for(const[key,input]of Object.entries(inputs))if(input.value!==String(config[key]))input.value=config[key];
     $('cw-shade-value').textContent=Math.round(config.shade*100)+'%';$('cw-blur-value').textContent=config.blur+' px';$('cw-panel-value').textContent=Math.round(config.panel*100)+'%';$('cw-volume-value').textContent=Math.round((Number.isFinite(config.volume)?config.volume:.6)*100)+'%';
     $('cw-disable').textContent=config.enabled?'恢复原版外观':'开启毛玻璃壁纸';$('cw-pause').textContent=config.paused?'播放壁纸':'暂停壁纸';$('cw-sync').textContent=config.followDesktop?'已跟随主屏 ✓':'跟随主屏壁纸';$('cw-sound').textContent=config.sound?'关闭声音':'开启声音';$('cw-glass').textContent=config.glass===false?'开启毛玻璃':'关闭毛玻璃';if(root.dataset.cwGlass!==(config.glass===false?'off':'on'))root.dataset.cwGlass=config.glass===false?'off':'on';
@@ -123,7 +128,7 @@
     next.addEventListener('error',()=>{if(disposed||loadingVideo!==next)return;$('cw-status').textContent='此视频需要兼容处理，正在准备…';send({_mediaError:id});},{once:true});
     next.src='https://codex-wallpaper.invalid/media/'+encodeURIComponent(id)+(retry?'?retry='+Date.now():'');playback();
   }
-  function finishDrag(){clearTimeout(dragTimer);dragging=false;flush();playback();}
+  function finishDrag(){clearTimeout(dragTimer);dragging=false;flush();glassDirty=true;schedule();playback();}
   function onSlider(key,event){if(!dragging){dragging=true;playback();}save({[key]:Number(event.target.value)});clearTimeout(dragTimer);dragTimer=setTimeout(finishDrag,240);}
   for(const[key,input]of Object.entries(inputs)){input.oninput=event=>onSlider(key,event);input.onchange=finishDrag;input.addEventListener('pointerup',finishDrag);}
   toggle.onclick=()=>setDrawer(!drawerOpen);$('cw-close').onclick=()=>setDrawer(false);$('cw-backdrop').onclick=()=>setDrawer(false);
@@ -132,11 +137,11 @@
   const observer=new MutationObserver(records=>{if(scanning)return;let changed=false;for(const record of records){for(const node of record.addedNodes){if(node.nodeType===1){changed=true;break;}}if(!changed)for(const node of record.removedNodes){if(node.nodeType===1){changed=true;break;}}if(changed)break;}if(!changed)return;if(!toggle.isConnected||toggle.getBoundingClientRect().x<1)mountToggleSoon();scanning=setTimeout(()=>{if('requestIdleCallback' in window)requestIdleCallback(()=>scanGlass(),{timeout:800});else scanGlass();},320);});observer.observe(document.getElementById('root'),{childList:true,subtree:true});
   function onVisibility(){playback();if(!document.hidden&&!sceneInstance){const item=library.find(entry=>entry.id===config.wallpaperId);if(item&&item.type==='scene')select(config.wallpaperId,true);}}document.addEventListener('visibilitychange',onVisibility);document.addEventListener('keydown',onEscape,true);window.addEventListener('resize',mountToggle);window.addEventListener('pagehide',flush);
   window.__codexWallpaper={
-    version:19,
+    version:20,
     update(next){if(disposed)return;if(style.textContent!==next.css)style.textContent=next.css;library=next.library;renderTypes();renderRatings();renderLibrary();this.updateConfig(next.config);},
     updateConfig(patch){if(disposed)return;patch={...patch};for(const key of Object.keys(pendingPatch))delete patch[key];config={...config,...patch};schedule();select(config.wallpaperId);playback();},
     retry(id){if(id===config.wallpaperId)select(id,true);},loading(message){$('cw-status').textContent=message;},
-    status(){const quality=video&&video.getVideoPlaybackQuality?video.getVideoPlaybackQuality():null;return{version:19,diag:{...diag,runningForSeconds:Math.round((Date.now()-diag.since)/1000)},video:quality?{total:quality.totalVideoFrames,dropped:quality.droppedVideoFrames}:null,kind:loadedKind,scene:Boolean(sceneInstance),enabled:config.enabled,paused:video?.paused??scenePaused??true,time:video?.currentTime??0,width:video?.videoWidth??sceneLayer?.querySelector('canvas')?.width??0,height:video?.videoHeight??sceneLayer?.querySelector('canvas')?.height??0,error:video?.error?.message,wallpaperId:config.wallpaperId,loadedId,firstFrameMs,selectionCount,frameUpdates,messages,dragging,drawerOpen};},
+    status(){const quality=video&&video.getVideoPlaybackQuality?video.getVideoPlaybackQuality():null;return{version:20,diag:{...diag,runningForSeconds:Math.round((Date.now()-diag.since)/1000)},video:quality?{total:quality.totalVideoFrames,dropped:quality.droppedVideoFrames}:null,kind:loadedKind,scene:Boolean(sceneInstance),enabled:config.enabled,paused:video?.paused??scenePaused??true,time:video?.currentTime??0,width:video?.videoWidth??sceneLayer?.querySelector('canvas')?.width??0,height:video?.videoHeight??sceneLayer?.querySelector('canvas')?.height??0,error:video?.error?.message,wallpaperId:config.wallpaperId,loadedId,firstFrameMs,selectionCount,frameUpdates,messages,dragging,drawerOpen};},
     capture(){const canvas=sceneLayer?.querySelector('canvas')||sceneInstance?.canvas;if(!canvas||!canvas.width)return null;try{return canvas.toDataURL('image/png');}catch{return null;}},
     dispose(){if(disposed)return;flush();disposed=true;observer.disconnect();clearTimeout(scanning);clearTimeout(dragTimer);clearTimeout(saveTimer);cancelAnimationFrame(frame);cancelVideo(loadingVideo);cancelVideo(video);clearScene();poster.removeAttribute('src');background.remove();toggle.remove();controls.remove();style.remove();for(const[element,original]of glass)restoreElement(element,original);glass.clear();delete root.dataset.codexWallpaper;delete root.dataset.cwGlass;for(const name of ['--cw-shade','--cw-blur','--cw-panel'])root.style.removeProperty(name);document.removeEventListener('visibilitychange',onVisibility);document.removeEventListener('keydown',onEscape,true);window.removeEventListener('resize',mountToggle);window.removeEventListener('pagehide',flush);delete window.__codexWallpaper;}
   };
