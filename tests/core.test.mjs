@@ -17,6 +17,8 @@ test('settings types and limits', () => {
 test('settings accept view, sound and clamped volume', () => {
   assert.deepEqual(sanitizeSettings({view:'list', sound:true, volume:2}), {sound:true, volume:1, view:'list'});
   assert.deepEqual(sanitizeSettings({view:'grid', sound:'yes', volume:-1}), {volume:0});
+  assert.deepEqual(sanitizeSettings({sceneFps:120}), {sceneFps:60});
+  assert.deepEqual(sanitizeSettings({sceneFps:2}), {sceneFps:10});
 });
 test('media range bounded memory, explicit and suffix ranges', () => {
   assert.deepEqual(mediaRange('bytes=4-7', 10), {start:4,end:7,size:4});

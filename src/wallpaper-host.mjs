@@ -26,7 +26,7 @@ let engineSource='';
 try{engineSource=fs.readFileSync(enginePath,'utf8');}catch{log('WebWallGL engine missing: '+enginePath+' (scene and web wallpapers stay unavailable)');}
 function selected(){try{const cfg=JSON.parse(fs.readFileSync(weConfig,'utf8'));for(const value of Object.values(cfg)){const file=value?.general?.wallpaperconfig?.selectedwallpapers?.Monitor0?.file;if(file)return state.library.find(item=>path.normalize(item.file).toLowerCase()===path.normalize(file).toLowerCase())?.id;}}catch{}return null;}
 state.library=inventory(workshopDirs,cacheDir);if(!state.library.length)throw Error('No video wallpapers found in configured workshopDirs. Download a Video wallpaper in Wallpaper Engine and try again.');
-state.config={enabled:true,wallpaperId:selected()||state.library[0].id,shade:.38,blur:22,panel:.36,paused:false,followDesktop:true,view:'cards',sound:false,volume:.6};
+state.config={enabled:true,wallpaperId:selected()||state.library[0].id,shade:.38,blur:22,panel:.36,paused:false,followDesktop:true,view:'cards',sound:false,volume:.6,sceneFps:30};
 try{Object.assign(state.config,sanitizeSettings(JSON.parse(fs.readFileSync(settingsFile,'utf8'))));}catch{}
 if(!state.library.some(item=>item.id===state.config.wallpaperId))state.config.wallpaperId=selected()||state.library[0].id;
 function persist(){clearTimeout(saveTimer);saveTimer=null;const text=JSON.stringify(state.config,null,2);saveQueue=saveQueue.catch(()=>{}).then(async()=>{const temp=settingsFile+'.tmp';await fs.promises.writeFile(temp,text);await fs.promises.rename(temp,settingsFile);metrics.settingsWrites++;}).catch(error=>log('settings: '+error.message));return saveQueue;}
@@ -66,7 +66,7 @@ function change(payload,source){
   if(typeof incoming._sceneRequest==='string'){void pushScene(incoming._sceneRequest,source);return;}
   metrics.configMessages++;
   const patch={};for(const key of ['enabled','paused','followDesktop','sound'])if(typeof incoming[key]==='boolean')patch[key]=incoming[key];
-  for(const[key,min,max]of [['shade',.1,.8],['panel',.12,.85],['blur',0,40],['volume',0,1]])if(Number.isFinite(incoming[key]))patch[key]=Math.min(max,Math.max(min,incoming[key]));
+  for(const[key,min,max]of [['shade',.1,.8],['panel',.12,.85],['blur',0,40],['volume',0,1],['sceneFps',10,60]])if(Number.isFinite(incoming[key]))patch[key]=Math.min(max,Math.max(min,incoming[key]));
   if(incoming.view==='cards'||incoming.view==='list')patch.view=incoming.view;
   if(typeof incoming.wallpaperId==='string'&&state.library.some(item=>item.id===incoming.wallpaperId))patch.wallpaperId=incoming.wallpaperId;
   if(!Object.keys(patch).length)return;Object.assign(state.config,patch);

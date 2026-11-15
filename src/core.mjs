@@ -18,7 +18,7 @@ export function sanitizeSettings(input = {}) {
   for (const key of ['enabled', 'paused', 'followDesktop', 'sound']) {
     if (typeof input[key] === 'boolean') clean[key] = input[key];
   }
-  for (const [key, min, max] of [['shade', .1, .8], ['panel', .12, .85], ['blur', 0, 40], ['volume', 0, 1]]) {
+  for (const [key, min, max] of [['shade', .1, .8], ['panel', .12, .85], ['blur', 0, 40], ['volume', 0, 1], ['sceneFps', 10, 60]]) {
     if (Number.isFinite(input[key])) clean[key] = Math.min(max, Math.max(min, input[key]));
   }
   if (input.view === 'cards' || input.view === 'list') clean.view = input.view;
