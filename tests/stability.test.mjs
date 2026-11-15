@@ -29,6 +29,15 @@ test('library panel wires cards, rating filter and a rescan request', () => {
   assert.match(css, /\[data-view="list"\]/);
 });
 
+test('glass can be switched off to drop the per-frame backdrop blur', () => {
+  const renderer = fs.readFileSync(path.join(root, 'src/renderer.js'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'src/wallpaper.css'), 'utf8');
+  assert.match(renderer, /cw-glass/);
+  assert.match(renderer, /cwGlass/);
+  assert.match(renderer, /painted\.glass!==config\.glass/);
+  assert.match(css, /html\[data-cw-glass=off\]/);
+});
+
 test('scene wallpapers load through the vendored engine and the control channel', () => {
   const renderer = fs.readFileSync(path.join(root, 'src/renderer.js'), 'utf8');
   const host = fs.readFileSync(path.join(root, 'src/wallpaper-host.mjs'), 'utf8');

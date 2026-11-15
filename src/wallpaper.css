@@ -89,3 +89,5 @@ html[data-codex-wallpaper="on"] [class*="_MainContentTopFade_"] { opacity:0 !imp
 .cw-card-kind { position:absolute; top:4px; left:4px; padding:1px 5px; border-radius:6px; background:#0c1622cc; color:#bfe0ff; font-size:10px; line-height:1.5; pointer-events:none; }
 .cw-card-kind[data-kind="scene"] { color:#ffd9a8; }
 .cw-card-kind[data-kind="web"] { color:#b8f0c8; }
+/* Glass off: panels keep the tint but skip the per-frame backdrop blur, which dominates compositing over a 4K video or a WebGL scene. */
+html[data-cw-glass=off] :is(.app-shell-left-panel, [data-testid="app-shell-floating-left-panel"], .composer-surface-chrome, [class*="_floatingSurface_"], [class*="_canvasSurface_"], .reply-chain-composer) { backdrop-filter:none !important; }

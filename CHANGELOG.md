@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Smoothness
+
+- Stop re-running the glass scanner's layout reads on every DOM mutation. The
+  scanner now runs in idle time after a longer debounce and no longer re-measures
+  the toolbar anchor, which removed the steady long tasks it caused while Codex
+  streamed tokens. Measured on this machine: 1 scan costing 4 ms total over 83 s,
+  against 68 long tasks in 200 s before the change.
+- Add a "关闭毛玻璃" toggle: panels keep their tint but drop `backdrop-filter`, the
+  part that re-blurs the moving wallpaper every frame.
+- Add scene render resolution (1x / 1.5x / 2x, default 1.5x) next to the existing
+  scene frame-rate control, and keep the scene frame rate at 30 by default.
+- Add lightweight diagnostics to `status()`: visibility/focus flips, video
+  play/pause transitions, long-task count and longest task, glass scans and their
+  cost, plus decoded/dropped video frames.
 ### Scene wallpapers
 
 - Play Wallpaper Engine **scene** projects (`project.json` + `scene.pkg`) instead
