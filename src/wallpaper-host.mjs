@@ -36,17 +36,32 @@ const renderer=fs.readFileSync(path.join(dir,'renderer.js'),'utf8'),script=()=>b
 async function broadcast(patch,source){for(const entry of state.connections.values())if(entry!==source)try{await entry.cdp.evaluate(`window.__codexWallpaper?.updateConfig(${JSON.stringify(patch)})`);}catch(error){log('config: '+error.message);}}
 async function pushLibrary(message){const payload=boot();for(const entry of state.connections.values()){try{await entry.cdp.evaluate(`window.__codexWallpaper?.update(${JSON.stringify(payload)})`);if(message)await entry.cdp.evaluate(`window.__codexWallpaper?.loading(${JSON.stringify(message)})`);}catch(error){log('library: '+error.message);}}}
 // Codex's page CSP blocks fetch() to the fake media origin, so scene packages travel
-// over DevTools in base64 chunks instead of the Fetch domain.
+// over DevTools in base64 chunks. The page decodes each chunk straight into a
+// preallocated buffer, which keeps peak memory near the package size instead of
+// holding every base64 string at once (some packages are hundreds of megabytes).
+const SCENE_CHUNK=768*1024,SCENE_LIMIT=768*1024*1024;
 async function pushScene(id,entry){
   const item=state.library.find(entry=>entry.id===id&&entry.type==='scene');
   if(!item)return;
+  let handle;
   try{
-    const data=await fs.promises.readFile(item.file),text=data.toString('base64'),CHUNK=512*1024;
-    await entry.cdp.evaluate('window.__cwPkg={id:'+JSON.stringify(id)+',parts:[]}');
-    for(let offset=0;offset<text.length;offset+=CHUNK)await entry.cdp.evaluate('window.__cwPkg.parts.push('+JSON.stringify(text.slice(offset,offset+CHUNK))+')');
-    await entry.cdp.evaluate('try{window.__codexWallpaper&&window.__codexWallpaper.scenePackage(window.__cwPkg.id,window.__cwPkg.parts)}finally{window.__cwPkg=null}');
-    log(`Scene package delivered: ${item.title} (${Math.round(data.length/1024)} KB)`);
-  }catch(error){log('scene: '+error.message);}
+    const stat=await fs.promises.stat(item.file);
+    if(stat.size>SCENE_LIMIT){await entry.cdp.evaluate(`window.__codexWallpaper?.loading(${JSON.stringify('场景包超过 768 MB，暂不支持')})`).catch(()=>{});log(`Scene package too large: ${item.title} (${Math.round(stat.size/1048576)} MB)`);return;}
+    await entry.cdp.evaluate(`window.__cwPkgBegin(${JSON.stringify(id)},${stat.size})`);
+    handle=await fs.promises.open(item.file,'r');
+    const buffer=Buffer.alloc(Math.min(SCENE_CHUNK,stat.size));
+    let offset=0;
+    while(offset<stat.size){
+      const length=Math.min(buffer.length,stat.size-offset);
+      const result=await handle.read(buffer,0,length,offset);
+      if(!result.bytesRead)throw Error('short package read');
+      await entry.cdp.evaluate('window.__cwPkgPush('+JSON.stringify(buffer.subarray(0,result.bytesRead).toString('base64'))+')');
+      offset+=result.bytesRead;
+    }
+    await entry.cdp.evaluate('window.__cwPkgEnd()');
+    log(`Scene package delivered: ${item.title} (${Math.round(stat.size/1024)} KB)`);
+  }catch(error){log('scene: '+error.message);try{await entry.cdp.evaluate('window.__cwPkgAbort()');}catch{}}
+  finally{if(handle)await handle.close().catch(()=>{});}
 }async function rescan(source){
   if(state.closed)return;
   let next;

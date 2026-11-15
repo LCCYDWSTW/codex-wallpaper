@@ -166,8 +166,53 @@ excluded from the library.
   shutdown test) and `npm run check` passed; `npm run package` produces a ZIP that
   includes `vendor/`.
 
-Not covered: scene audio, performance on heavier scene packages (the largest
-package in this library is 16 MB), and scene switching under long use. Web
-wallpapers remain unsupported: the page CSP allows only `frame-src 'self' blob:`,
-so a sandboxed third-party iframe cannot be mounted without disabling CSP for the
-whole Codex window, which this project does not do.
+Not covered: scene audio and scene switching under long use. Web wallpapers remain
+unsupported: the page CSP allows only `frame-src 'self' blob:`, so a sandboxed
+third-party iframe cannot be mounted without disabling CSP for the whole Codex
+window, which this project does not do.
+
+## Large scene package stress test — 2026-11-15
+
+This workshop library holds 126 scene packages totalling 7.9 GB, averaging 62.5 MB;
+the largest is **507 MB**, so the transfer had to be sized for far more than the
+sample used during development.
+
+- The first implementation shipped one base64 string per package and decoded it in
+  a single `atob`, which would need roughly 1.4 GB of transient memory for a 507 MB
+  package. It now streams 768 KB chunks that the page decodes straight into a
+  preallocated `Uint8Array`, and it refuses packages above 768 MB with an explicit
+  status message.
+- Measured on the 507 MB package: **28 seconds** from selection to a rendered
+  `2560 x 1380` scene, with the progress line advancing through the transfer.
+- Live JS heap measured through `HeapProfiler.collectGarbage`: 728 MB with that
+  scene loaded (the package bytes stay alive while the scene is mounted), 250 MB
+  after switching to a smaller scene, against a 4 GB heap limit. The 4 GB
+  "used heap" figure seen mid-transfer is uncollected garbage, not retained memory.
+- Switching from the large scene to a video wallpaper and back did not accumulate.
+
+Still not measured: several 300 MB+ scenes in sequence, and GPU memory pressure on
+8 GB cards under that load.
+
+## Uninstall and reinstall verification — 2026-11-15
+
+The shipped scripts were run on this machine, on the same Windows account, with
+Codex running in the tray and the helper attached:
+
+- `uninstall.ps1` after stopping the helper removed the desktop, Start menu and
+  Startup shortcuts, restored the native Codex startup task from `State=1` back to
+  `2`, archived `install-state.json` as `uninstalled-<guid>.json`, and left
+  `config.json`, `settings.json` and the app folder in place as documented.
+- `install.ps1 -EnableStartup` moved the old app folder to `previous-<guid>`, copied
+  `src`, `vendor` and `scripts`, recreated all three shortcuts with the expected
+  targets and the `--at-logon` argument, disabled the native task again (`1`, with
+  the original `2` recorded) and re-detected Node, the Steam library and the Codex
+  profile.
+- Settings survived the round trip unchanged, including the selected wallpaper.
+- `Start.vbs` reused the already-running Codex, started helper 3812 and logged
+  `Ready: 198 wallpapers ... ; WebWallGL loaded` followed by
+  `Attached streaming wallpaper`.
+- After reinstall the live panel checks passed again (18 of 18) and a scene
+  wallpaper rendered at 2560 x 1380.
+
+Still outstanding: a clean install and uninstall on a separate Windows account or
+another PC.

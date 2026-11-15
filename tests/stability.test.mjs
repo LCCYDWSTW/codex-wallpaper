@@ -35,12 +35,14 @@ test('scene wallpapers load through the vendored engine and the control channel'
   const css = fs.readFileSync(path.join(root, 'src/wallpaper.css'), 'utf8');
   // The page cannot fetch the fake media origin (its CSP has no connect-src entry), so packages travel as base64 chunks.
   assert.match(renderer, /_sceneRequest/);
-  assert.match(renderer, /scenePackage\(id,parts\)/);
+  assert.match(renderer, /__cwPkgBegin/);
+  assert.match(renderer, /__cwPkgPush/);
   assert.match(renderer, /createScene\(/);
   assert.match(renderer, /bytesSource/);
   assert.match(renderer, /if\(document\.hidden\)/);
   assert.match(host, /async function pushScene/);
   assert.match(host, /_sceneRequest/);
+  assert.match(host, /SCENE_LIMIT/);
   assert.match(host, /vendor',\s*'webwallgl'/);
   assert.match(css, /#cw-scene canvas/);
 });
