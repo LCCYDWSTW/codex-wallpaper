@@ -31,6 +31,7 @@ Windows 上的非官方 Codex 外观伴侣：把 Wallpaper Engine 的 **Video �
 - 壁纸存在非 Everyone 分级时出现「内容分级」筛选；当前选中的壁纸高亮显示。
 - 右上角图片按钮打开侧边设置，支持暗化、面板雾化、面板底色、暂停和恢复原版外观。
 - 可选壁纸声音与音量滑条（默认静音）；关掉 Codex 窗口时视频随窗口隐藏而暂停，场景壁纸在窗口重新可见时自动加载。
+- 性能可控：「关闭毛玻璃」用半透明纯色面板替代实时背景模糊；场景壁纸可单独调帧率（15/30/60）和渲染精度（1x/1.5x/2x）。
 - 拖动滑条时合并画面更新，暂停背景视频以减少竞争，停止拖动后恢复。
 - 可选跟随 Wallpaper Engine 主屏所选壁纸（视频或场景）；不依赖 Wallpaper Engine 窗口保持打开。
 - 可选 Windows 登录启动，只启用壁纸入口，备份并关闭原版 Codex 的重复登录任务。
@@ -106,7 +107,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\uninstall.ps1
 
 ## 范围与安全
 
-- 仅支持 Video；不支持 Scene/`scene.pkg`、Web、Application，也不镜像 Wallpaper Engine 的实时渲染画面。
+- 支持 **Video** 与 **Scene** 两类壁纸；不支持 Web、Application，也不镜像 Wallpaper Engine 的实时渲染画面。场景壁纸由内置的 WebWallGL 引擎在页面里独立复刻渲染，与 Wallpaper Engine 的画面不保证逐帧一致。
 - 通过绑定 `127.0.0.1` 的随机 Chromium 调试端口接入自己的样式和视频层，不更改 CSP，不解除浏览器沙箱。
 - **本机调试端口具有读取、控制 Codex 页面内容的能力**，同机进程也可能访问。只在信任本机软件的个人环境启用；受管设备需遵守组织策略。端口随 Codex 退出而关闭。
 - `https://codex-wallpaper.invalid/` 是由辅助进程拦截的媒体占位域名，没有远程壁纸服务器。资源来自已配置目录；本工具不上传壁纸或聊天内容，Codex 自己的联网行为不受此声明覆盖。

@@ -1,6 +1,8 @@
-# Verification scope — 0.1.0
+# Verification scope — 0.2.0
 
-Recorded on 2026-10-28. This report deliberately distinguishes automated checks from a real desktop sign-in.
+The 0.1.0 record from 2026-10-28 is kept below unchanged; everything under the
+2026-11-15 headings describes the current release. This report deliberately
+distinguishes automated checks from a real desktop sign-in.
 
 ## Completed for the release project
 
@@ -22,7 +24,7 @@ The separate local prototype displayed decoded 1920 x 1080 video and a single to
 - Optional FFmpeg conversion across different GPU drivers and codecs.
 - Node.js 22 CI execution (local verification used Node.js 24; CI is configured for 22 and 24).
 
-The source is published at `github.com/LCCYDWSTW/codex-wallpaper`. The `Check` and `Release source` workflows passed for the pushed `main`, and `v0.1.0` is published as a pre-release with the packaged ZIP and its SHA-256 file. No frame-zero wallpaper or universal compatibility claim is made.
+The source is published at `github.com/LCCYDWSTW/codex-wallpaper`. The `Check` and `Release source` workflows pass for every pushed commit, and `v0.1.0` is published as a pre-release; `0.2.0` covers the library panel, scene wallpapers and the smoothness work recorded below. No frame-zero wallpaper or universal compatibility claim is made.
 
 
 ## Local stability patch checks (after original 0.1.0)
@@ -217,6 +219,27 @@ Codex running in the tray and the helper attached:
 Still outstanding: a clean install and uninstall on a separate Windows account or
 another PC.
 
+## Smoothness verification — 2026-11-15
+
+Measured on this machine (16 threads, RTX 4060 Laptop, 144 Hz panel) with a
+2560 x 1380 scene wallpaper mounted and the Codex window in front:
+
+- Idle frame pacing: 144 fps, p95 7.1 ms, no long tasks.
+- Dragging the blur slider used to rewrite `backdrop-filter` on every pointer move:
+  p50 93.5 ms / p95 223.6 ms per frame. The radius now freezes during the drag and
+  applies on release: p50 6.8 ms / p95 24.2 ms.
+- Card grid scrolling: p50 9.3 ms / p95 21.7 ms before, p50 7.3 ms / p95 9.5 ms
+  after the drawer lost its own backdrop blur and cards gained paint containment.
+  The first pass over the grid still decodes preview thumbnails.
+- The glass scanner used to run layout reads on every DOM mutation. It now runs in
+  idle time after a 320 ms debounce and cost 4 ms across 83 s of use, where 200 s of
+  normal use had produced 68 long tasks (longest 727 ms).
+- Wallpaper cost at idle: about 20 W GPU with a 4K video wallpaper, 2.7 W with the
+  wallpaper disabled; the glass blur accounts for roughly 7 W of that.
+
+Not measured here: GPU frame-time counters (the driver exposes none), and scenes
+that keep the page main thread busy for their whole render loop – WebWallGL renders
+on the main thread, so heavy scenes leave less headroom for Codex itself.
 ## Zero-state install verification — 2026-11-15
 
 The whole `%LOCALAPPDATA%\CodexWallpaper` folder was deleted (after a clean uninstall,

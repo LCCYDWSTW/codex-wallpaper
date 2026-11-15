@@ -19,6 +19,7 @@ An unofficial Windows companion that plays local Wallpaper Engine **Video** wall
 - **Pick from a thumbnail wall.** The side panel lists every wallpaper as a card built from the project's `preview` image, with a list view, title/tag search, video/scene filtering, an optional content-rating filter and the current selection highlighted.
 - **Rescan without restarting.** The panel's Refresh button re-reads the configured workshop folders, so newly subscribed wallpapers appear immediately.
 - **No `npm install`.** One bundled MIT renderer file (WebWallGL, about 1.1 MB) is shipped in `vendor/`; there is no package manager and no build step.
+- **Tunable cost.** "关闭毛玻璃" replaces the live backdrop blur with a flat tint, and scene wallpapers have their own frame rate (15/30/60) and render scale (1x/1.5x/2x).
 
 > Most comparable tools downscale video to 1080p or cap single files (commonly 128 MB). This project does neither.
 
@@ -47,7 +48,7 @@ Settings and logs are kept in `%LOCALAPPDATA%\CodexWallpaper`, outside the sourc
 
 A Windows named mutex serializes launches and is released by the OS on a crash. The launcher does not terminate or restart existing Codex processes. If ordinary Codex is already open, fully quit it and use the wallpaper shortcut. When sign-in startup is enabled, the installer saves and disables native MSIX startup state before registering its own entry. That Windows state storage is an implementation detail and may change.
 
-The background is attached after Codex starts: a brief original background can still appear before media is ready. No first-frame or fixed startup-latency guarantee is provided. Scene, Web and Application wallpapers are unsupported. This is independent video playback, not a live mirror of Wallpaper Engine rendering.
+The background is attached after Codex starts: a brief original background can still appear before media is ready. No first-frame or fixed startup-latency guarantee is provided. Video and scene projects are supported; Web and Application wallpapers are not. Scene projects are re-rendered by the bundled engine and are not guaranteed to match Wallpaper Engine frame for frame.
 
 ## Security and privacy
 
