@@ -1,6 +1,6 @@
 (() => {
   const boot = __CW_BOOT__;
-  if (window.__codexWallpaper?.version === 10) { window.__codexWallpaper.update(boot); return; }
+  if (window.__codexWallpaper?.version === 11) { window.__codexWallpaper.update(boot); return; }
   window.__codexWallpaper?.dispose();
   if (!document.body || !document.getElementById('root')) return;
   let config={...boot.config},library=boot.library,disposed=false,frame=0,saveTimer=0,dragTimer=0,scanning=0;
@@ -79,14 +79,14 @@
       if(disposed||token!==loadToken)return;
       const instance=engine.createScene(sceneHost(),{fit:'cover',volume:sceneVolumeFor(),fps:60});
       sceneInstance=instance;scenePaused=null;
-      instance.on?.('error',error=>{if(token===loadToken)$('cw-status').textContent='场景壁纸渲染失败：'+(error?.message||error);});
+      instance.on?.('error',error=>{if(token!==loadToken)return;clearScene();poster.hidden=false;$('cw-status').textContent='场景壁纸渲染失败：'+(error?.message||error);});
       await instance.load(engine.bytesSource(pkg,{type:'scene',title:item.title},'scene:'+id));
       if(disposed||token!==loadToken){try{instance.destroy();}catch{}return;}
       loadedKind='scene';loadedId=id;firstFrameMs=Math.round(performance.now()-selectionStarted);poster.hidden=true;
       const canvas=sceneLayer?.querySelector('canvas')||instance.canvas;
       $('cw-status').textContent=`${canvas?.width||0} × ${canvas?.height||0} · 场景壁纸 · ${library.length} 个壁纸`;
       playback();
-    }catch(error){if(!disposed&&token===loadToken)$('cw-status').textContent='场景壁纸加载失败：'+(error?.message||error);}
+    }catch(error){if(!disposed&&token===loadToken){clearScene();poster.hidden=false;$('cw-status').textContent='场景壁纸加载失败：'+(error?.message||error);}}
   }
   function select(id,retry=false){
     if(selectedId===id&&!retry)return;selectedId=id;selectionCount++;selectionStarted=performance.now();firstFrameMs=null;loadToken++;
@@ -114,12 +114,12 @@
   const observer=new MutationObserver(records=>{if(!scanning&&records.some(record=>[...record.addedNodes,...record.removedNodes].some(node=>node.nodeType===1)))scanning=setTimeout(scanGlass,180);});observer.observe(document.getElementById('root'),{childList:true,subtree:true});
   function onVisibility(){playback();if(!document.hidden&&!sceneInstance){const item=library.find(entry=>entry.id===config.wallpaperId);if(item&&item.type==='scene')select(config.wallpaperId,true);}}document.addEventListener('visibilitychange',onVisibility);document.addEventListener('keydown',onEscape,true);window.addEventListener('resize',mountToggle);window.addEventListener('pagehide',flush);
   window.__codexWallpaper={
-    version:10,
+    version:11,
     update(next){if(disposed)return;if(style.textContent!==next.css)style.textContent=next.css;library=next.library;renderTypes();renderRatings();renderLibrary();this.updateConfig(next.config);},
     updateConfig(patch){if(disposed)return;patch={...patch};for(const key of Object.keys(pendingPatch))delete patch[key];config={...config,...patch};schedule();select(config.wallpaperId);playback();},
     scenePackage(id,parts){if(!pendingPackage||pendingPackage.id!==id)return;const pending=pendingPackage;pendingPackage=null;clearTimeout(packageTimer);try{const binary=atob((parts||[]).join(''));const bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);pending.resolve(bytes.buffer);}catch(error){pending.reject(error);}},
     retry(id){if(id===config.wallpaperId)select(id,true);},loading(message){$('cw-status').textContent=message;},
-    status(){return{version:10,kind:loadedKind,scene:Boolean(sceneInstance),enabled:config.enabled,paused:video?.paused??scenePaused??true,time:video?.currentTime??0,width:video?.videoWidth??sceneLayer?.querySelector('canvas')?.width??0,height:video?.videoHeight??sceneLayer?.querySelector('canvas')?.height??0,error:video?.error?.message,wallpaperId:config.wallpaperId,loadedId,firstFrameMs,selectionCount,frameUpdates,messages,dragging,drawerOpen};},
+    status(){return{version:11,kind:loadedKind,scene:Boolean(sceneInstance),enabled:config.enabled,paused:video?.paused??scenePaused??true,time:video?.currentTime??0,width:video?.videoWidth??sceneLayer?.querySelector('canvas')?.width??0,height:video?.videoHeight??sceneLayer?.querySelector('canvas')?.height??0,error:video?.error?.message,wallpaperId:config.wallpaperId,loadedId,firstFrameMs,selectionCount,frameUpdates,messages,dragging,drawerOpen};},
     capture(){const canvas=sceneLayer?.querySelector('canvas')||sceneInstance?.canvas;if(!canvas||!canvas.width)return null;try{return canvas.toDataURL('image/png');}catch{return null;}},
     dispose(){if(disposed)return;flush();disposed=true;observer.disconnect();clearTimeout(scanning);clearTimeout(dragTimer);clearTimeout(saveTimer);cancelAnimationFrame(frame);cancelVideo(loadingVideo);cancelVideo(video);clearScene();poster.removeAttribute('src');background.remove();toggle.remove();controls.remove();style.remove();for(const[element,original]of glass)restoreElement(element,original);glass.clear();delete root.dataset.codexWallpaper;for(const name of ['--cw-shade','--cw-blur','--cw-panel'])root.style.removeProperty(name);document.removeEventListener('visibilitychange',onVisibility);document.removeEventListener('keydown',onEscape,true);window.removeEventListener('resize',mountToggle);window.removeEventListener('pagehide',flush);delete window.__codexWallpaper;}
   };
