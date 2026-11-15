@@ -157,12 +157,17 @@ excluded from the library.
   the 198 cards carry video/scene badges, the engine reports
   `Boolean(globalThis.WebWallGL) === true` after injection, and the helper log
   records `Scene package delivered` when a scene card is selected.
+- End-to-end confirmation with the Codex window actually opened: the selected scene
+  wallpaper loaded and rendered inside the running window — the renderer reported
+  `1600 × 1000 · 场景壁纸 · 198 个壁纸` with `kind: scene`, and a capture of the live
+  canvas returned a 1.6 MB PNG showing the animated scene with its clock layer and
+  particle sparkles. That capture is not committed.
 - `npm test` passed 35 of 36 cases (the skipped case is the Linux-only child-process
-  shutdown test) and `npm run check` passed.
+  shutdown test) and `npm run check` passed; `npm run package` produces a ZIP that
+  includes `vendor/`.
 
-Not covered: a scene wallpaper observed inside a visible Codex window on a real
-display (the window was in the tray for every automated check), scene audio, and
-performance on heavier scene packages (the largest package in this library is
-16 MB). Web wallpapers remain unsupported: the page CSP allows only
-`frame-src 'self' blob:`, so a sandboxed third-party iframe cannot be mounted
-without disabling CSP for the whole Codex window, which this project does not do.
+Not covered: scene audio, performance on heavier scene packages (the largest
+package in this library is 16 MB), and scene switching under long use. Web
+wallpapers remain unsupported: the page CSP allows only `frame-src 'self' blob:`,
+so a sandboxed third-party iframe cannot be mounted without disabling CSP for the
+whole Codex window, which this project does not do.
