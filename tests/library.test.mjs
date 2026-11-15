@@ -22,11 +22,21 @@ test('inventory filters invalid projects and prevents traversal', t=>{
   project('3',{type:'scene',file:'video.mp4'});
   project('4',{type:'video',file:'missing.mp4'},false);
   project('5',{type:'video',title:'Rated',file:'video.mp4',contentrating:'Mature',tags:['Anime',7,'Blue Archive']});
+  // A scene project counts only when scene.pkg is present inside the folder.
+  project('6',{type:'scene',title:'Scene',file:'scene.json'});
+  fs.writeFileSync(path.join(root,'6','scene.pkg'),'synthetic scene package');
+  // A web project counts only with an HTML entry file that stays inside its folder.
+  project('7',{type:'web',title:'Web',file:'index.html'});
+  fs.writeFileSync(path.join(root,'7','index.html'),'<html></html>');
+  project('8',{type:'web',title:'Escaping web',file:'../../outside.mp4'});
   const items=inventory([root,root,path.join(temp,'missing')],path.join(temp,'cache'));
-  assert.equal(items.length,2);
+  // Web projects are listed only when the page can frame them; Codex CSP blocks it, so they are skipped.
+  assert.equal(items.length,3);
   const example=items.find(item=>item.title==='Example'),rated=items.find(item=>item.title==='Rated');
+  const scene=items.find(item=>item.title==='Scene');
   assert.equal(example.preview,null);assert.equal(example.rating,'');assert.deepEqual(example.tags,[]);
   assert.equal(rated.rating,'Mature');assert.deepEqual(rated.tags,['Anime','Blue Archive']);
+  assert.equal(scene.type,'scene');assert.match(scene.file,/scene\.pkg$/);
   assert.match(example.id,/^[a-f0-9]{24}$/);
   assert.equal(example.id,inventory([root],path.join(temp,'cache')).find(item=>item.title==='Example').id);
 });

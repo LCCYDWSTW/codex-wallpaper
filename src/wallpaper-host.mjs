@@ -20,6 +20,10 @@ const state={connections:new Map(),library:[],config:null,closed:false};
 let saveTimer=null,saveQueue=Promise.resolve(),tickTimer=null;
 let boundEndpoint=null;
 const log=message=>console.log(new Date().toISOString(),message);
+// Scene and web wallpapers need the vendored WebWallGL engine; the page receives it over DevTools.
+const enginePath=path.join(dir,'..','vendor','webwallgl','webwallgl.global.min.js');
+let engineSource='';
+try{engineSource=fs.readFileSync(enginePath,'utf8');}catch{log('WebWallGL engine missing: '+enginePath+' (scene and web wallpapers stay unavailable)');}
 function selected(){try{const cfg=JSON.parse(fs.readFileSync(weConfig,'utf8'));for(const value of Object.values(cfg)){const file=value?.general?.wallpaperconfig?.selectedwallpapers?.Monitor0?.file;if(file)return state.library.find(item=>path.normalize(item.file).toLowerCase()===path.normalize(file).toLowerCase())?.id;}}catch{}return null;}
 state.library=inventory(workshopDirs,cacheDir);if(!state.library.length)throw Error('No video wallpapers found in configured workshopDirs. Download a Video wallpaper in Wallpaper Engine and try again.');
 state.config={enabled:true,wallpaperId:selected()||state.library[0].id,shade:.38,blur:22,panel:.36,paused:false,followDesktop:true,view:'cards',sound:false,volume:.6};
@@ -27,26 +31,39 @@ try{Object.assign(state.config,sanitizeSettings(JSON.parse(fs.readFileSync(setti
 if(!state.library.some(item=>item.id===state.config.wallpaperId))state.config.wallpaperId=selected()||state.library[0].id;
 function persist(){clearTimeout(saveTimer);saveTimer=null;const text=JSON.stringify(state.config,null,2);saveQueue=saveQueue.catch(()=>{}).then(async()=>{const temp=settingsFile+'.tmp';await fs.promises.writeFile(temp,text);await fs.promises.rename(temp,settingsFile);metrics.settingsWrites++;}).catch(error=>log('settings: '+error.message));return saveQueue;}
 const scheduleSave=()=>{clearTimeout(saveTimer);saveTimer=setTimeout(persist,100);};
-function boot(){return{config:{...state.config},library:state.library.map(({id,title,rating,tags,preview,size})=>({id,title,rating,tags,preview:Boolean(preview),size})),css:fs.readFileSync(path.join(dir,'wallpaper.css'),'utf8')};}
+function boot(){return{config:{...state.config},library:state.library.map(({id,title,type,rating,tags,preview,size})=>({id,title,type,rating,tags,preview:Boolean(preview),size})),css:fs.readFileSync(path.join(dir,'wallpaper.css'),'utf8')};}
 const renderer=fs.readFileSync(path.join(dir,'renderer.js'),'utf8'),script=()=>buildBootScript(renderer,boot());
 async function broadcast(patch,source){for(const entry of state.connections.values())if(entry!==source)try{await entry.cdp.evaluate(`window.__codexWallpaper?.updateConfig(${JSON.stringify(patch)})`);}catch(error){log('config: '+error.message);}}
 async function pushLibrary(message){const payload=boot();for(const entry of state.connections.values()){try{await entry.cdp.evaluate(`window.__codexWallpaper?.update(${JSON.stringify(payload)})`);if(message)await entry.cdp.evaluate(`window.__codexWallpaper?.loading(${JSON.stringify(message)})`);}catch(error){log('library: '+error.message);}}}
-async function rescan(source){
+// Codex's page CSP blocks fetch() to the fake media origin, so scene packages travel
+// over DevTools in base64 chunks instead of the Fetch domain.
+async function pushScene(id,entry){
+  const item=state.library.find(entry=>entry.id===id&&entry.type==='scene');
+  if(!item)return;
+  try{
+    const data=await fs.promises.readFile(item.file),text=data.toString('base64'),CHUNK=512*1024;
+    await entry.cdp.evaluate('window.__cwPkg={id:'+JSON.stringify(id)+',parts:[]}');
+    for(let offset=0;offset<text.length;offset+=CHUNK)await entry.cdp.evaluate('window.__cwPkg.parts.push('+JSON.stringify(text.slice(offset,offset+CHUNK))+')');
+    await entry.cdp.evaluate('try{window.__codexWallpaper&&window.__codexWallpaper.scenePackage(window.__cwPkg.id,window.__cwPkg.parts)}finally{window.__cwPkg=null}');
+    log(`Scene package delivered: ${item.title} (${Math.round(data.length/1024)} KB)`);
+  }catch(error){log('scene: '+error.message);}
+}async function rescan(source){
   if(state.closed)return;
   let next;
   try{next=inventory(workshopDirs,cacheDir);}catch(error){log('rescan: '+error.message);return;}
-  if(!next.length){try{await source.cdp.evaluate(`window.__codexWallpaper?.loading(${JSON.stringify('没有扫描到视频壁纸，请检查 workshopDirs 与 Wallpaper Engine 库')})`);}catch{}return;}
+  if(!next.length){try{await source.cdp.evaluate(`window.__codexWallpaper?.loading(${JSON.stringify('没有扫描到壁纸，请检查 workshopDirs 与 Wallpaper Engine 库')})`);}catch{}return;}
   const previous=state.library.length,delta=next.length-previous;
   state.library=next;
   if(!next.some(item=>item.id===state.config.wallpaperId))state.config.wallpaperId=selected()||next[0].id;
   scheduleSave();
-  log(`Rescanned: ${next.length} video wallpapers (${delta>=0?'+':''}${delta})`);
-  await pushLibrary(`已刷新：${next.length} 个视频壁纸`);
+  log(`Rescanned: ${next.length} wallpapers (${delta>=0?'+':''}${delta})`);
+  await pushLibrary(`已刷新：${next.length} 个壁纸`);
 }
 function change(payload,source){
   let incoming;try{incoming=JSON.parse(payload);}catch{return;}if(!incoming||typeof incoming!=='object')return;
   if(typeof incoming._mediaError==='string'){void compatible(incoming._mediaError,source);return;}
   if(incoming._rescan===true){void rescan(source);return;}
+  if(typeof incoming._sceneRequest==='string'){void pushScene(incoming._sceneRequest,source);return;}
   metrics.configMessages++;
   const patch={};for(const key of ['enabled','paused','followDesktop','sound'])if(typeof incoming[key]==='boolean')patch[key]=incoming[key];
   for(const[key,min,max]of [['shade',.1,.8],['panel',.12,.85],['blur',0,40],['volume',0,1]])if(Number.isFinite(incoming[key]))patch[key]=Math.min(max,Math.max(min,incoming[key]));
@@ -56,24 +73,41 @@ function change(payload,source){
   if(state.config.followDesktop){const id=selected();if(id&&id!==state.config.wallpaperId){state.config.wallpaperId=id;patch.wallpaperId=id;void source.cdp.evaluate(`window.__codexWallpaper?.updateConfig(${JSON.stringify({wallpaperId:id})})`).catch(error=>log(error.message));}}
   scheduleSave();void broadcast(patch,source);
 }
-const mime=file=>({'.webm':'video/webm','.gif':'image/gif','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp'}[path.extname(file).toLowerCase()]||'video/mp4');
+const contentTypes={'.mp4':'video/mp4','.m4v':'video/mp4','.mov':'video/quicktime','.webm':'video/webm','.gif':'image/gif','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml','.html':'text/html; charset=utf-8','.htm':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.woff2':'font/woff2','.woff':'font/woff','.ttf':'font/ttf','.otf':'font/otf','.mp3':'audio/mpeg','.ogg':'audio/ogg','.wav':'audio/wav','.pkg':'application/octet-stream'};
+const mime=file=>contentTypes[path.extname(file).toLowerCase()]||'application/octet-stream';
+const MAX_ASSET=96*1024*1024;
 async function serve(cdp,event){
   let handle;
   try{
-    const url=new URL(event.request.url),parts=url.pathname.split('/'),item=state.library.find(item=>item.id===decodeURIComponent(parts[2]||''));
-    if(!item||!['media','poster'].includes(parts[1])||!['GET','HEAD'].includes(event.request.method))throw Error('not found');
-    const poster=parts[1]==='poster',file=poster?item.preview:(fs.existsSync(item.cached)?item.cached:item.file);if(!file)throw Error('not found');
-    handle=await fs.promises.open(file,'r');const stat=await handle.stat(),range=Object.entries(event.request.headers).find(([key])=>key.toLowerCase()==='range')?.[1];
+    const url=new URL(event.request.url),parts=url.pathname.split('/').map(part=>{try{return decodeURIComponent(part);}catch{return part;}});
+    const kind=parts[1]||'',id=parts[2]||'',item=state.library.find(entry=>entry.id===id);
+    if(!item||!['GET','HEAD'].includes(event.request.method))throw Error('not found');
+    let file=null,poster=false,ranged=false;
+    if(kind==='poster'){poster=true;file=item.preview;}
+    else if(kind==='media'){if(item.type!=='video')throw Error('not found');ranged=true;file=fs.existsSync(item.cached)?item.cached:item.file;}
+    else if(kind==='scene'){if(item.type!=='scene')throw Error('not found');file=item.file;}
+    if(!file)throw Error('not found');
+    handle=await fs.promises.open(file,'r');
+    const stat=await handle.stat(),range=Object.entries(event.request.headers).find(([key])=>key.toLowerCase()==='range')?.[1];
+    if(!stat.isFile())throw Error('not found');
     // A preview may change after inventory scanning; keep per-request memory bounded.
-    if(!stat.isFile()||(poster&&(stat.size===0||stat.size>10*1024*1024)))throw Error('invalid preview');
-    let from=0,to=stat.size-1;
-    if(!poster){const bounded=mediaRange(range,stat.size);
-      if(!bounded){await cdp.send('Fetch.fulfillRequest',{requestId:event.requestId,responseCode:416,responseHeaders:[{name:'Content-Range',value:`bytes */${stat.size}`}],body:''});return;}
-      from=bounded.start;to=bounded.end;}
-    const size=to-from+1,body=Buffer.alloc(event.request.method==='HEAD'?0:size);
+    if(poster&&(stat.size===0||stat.size>10*1024*1024))throw Error('invalid preview');
+    const headers=[{name:'Content-Type',value:mime(file)},{name:'Cache-Control',value:poster?'private, max-age=86400':'private, max-age=300'},{name:'Cross-Origin-Resource-Policy',value:'cross-origin'},{name:'Access-Control-Allow-Origin',value:'*'}];
+    if(!ranged){
+      if(stat.size>MAX_ASSET)throw Error('asset too large');
+      const body=Buffer.alloc(event.request.method==='HEAD'?0:stat.size);
+      if(body.length){let read=0;while(read<body.length){const result=await handle.read(body,read,body.length-read,read);if(!result.bytesRead)throw Error('short read');read+=result.bytesRead;}}
+      headers.push({name:'Content-Length',value:String(stat.size)});
+      await cdp.send('Fetch.fulfillRequest',{requestId:event.requestId,responseCode:200,responseHeaders:headers,body:body.toString('base64')});
+      return;
+    }
+    const bounded=mediaRange(range,stat.size);
+    if(!bounded){await cdp.send('Fetch.fulfillRequest',{requestId:event.requestId,responseCode:416,responseHeaders:[{name:'Content-Range',value:`bytes */${stat.size}`}],body:''});return;}
+    const from=bounded.start,to=bounded.end,size=to-from+1,body=Buffer.alloc(event.request.method==='HEAD'?0:size);
     if(body.length){let read=0;while(read<body.length){const result=await handle.read(body,read,body.length-read,from+read);if(!result.bytesRead)throw Error('short media read');read+=result.bytesRead;}}
-    const headers=[{name:'Content-Type',value:mime(file)},{name:'Content-Length',value:String(size)},{name:'Cache-Control',value:'private, max-age=86400'},{name:'Accept-Ranges',value:'bytes'},{name:'Cross-Origin-Resource-Policy',value:'cross-origin'}];if(!poster)headers.push({name:'Content-Range',value:`bytes ${from}-${to}/${stat.size}`});
-    await cdp.send('Fetch.fulfillRequest',{requestId:event.requestId,responseCode:poster?200:206,responseHeaders:headers,body:body.toString('base64')});if(!poster){metrics.mediaRequests++;metrics.mediaBytes+=body.length;}
+    headers.push({name:'Content-Length',value:String(size)},{name:'Accept-Ranges',value:'bytes'},{name:'Content-Range',value:`bytes ${from}-${to}/${stat.size}`});
+    await cdp.send('Fetch.fulfillRequest',{requestId:event.requestId,responseCode:206,responseHeaders:headers,body:body.toString('base64')});
+    metrics.mediaRequests++;metrics.mediaBytes+=body.length;
   }catch{try{await cdp.send('Fetch.fulfillRequest',{requestId:event.requestId,responseCode:404,body:''});}catch{}}
   finally{if(handle)await handle.close().catch(()=>{});}
 }
@@ -89,10 +123,14 @@ async function compatible(id,entry){
   })();preparing.set(id,job);job.finally(()=>preparing.delete(id)).catch(()=>{});}
   try{await preparing.get(id);if(!state.closed&&state.config.wallpaperId===id)await entry.cdp.evaluate(`window.__codexWallpaper?.retry(${JSON.stringify(id)})`);}catch(error){if(state.closed)return;log('conversion: '+error.message);try{await entry.cdp.evaluate(`window.__codexWallpaper?.loading('视频兼容处理失败，请选择其他壁纸；重启后可重试')`);}catch{}}
 }
+async function ensureEngine(cdp){
+  if(!engineSource)return false;
+  try{if(await cdp.evaluate('Boolean(globalThis.WebWallGL)'))return true;await cdp.evaluate(engineSource);const ready=await cdp.evaluate('Boolean(globalThis.WebWallGL)');if(!ready)log('WebWallGL engine did not initialise on this page');return ready;}catch(error){log('engine: '+error.message);return false;}
+}
 async function attach(target){
   const cdp=new CDP(target.webSocketDebuggerUrl),entry={cdp};state.connections.set(target.id,entry);cdp.ws.addEventListener('close',()=>{if(state.connections.get(target.id)===entry)state.connections.delete(target.id);});
-  cdp.on('Fetch.requestPaused',event=>serve(cdp,event));cdp.on('Runtime.bindingCalled',event=>{if(event.name==='codexWallpaperControl')change(event.payload,entry);});cdp.on('Page.domContentEventFired',async()=>{entry.ready=false;await cdp.evaluate(script());entry.ready=await cdp.evaluate('Boolean(window.__codexWallpaper)');});
-  await cdp.send('Runtime.enable');await cdp.send('Page.enable');await cdp.send('Runtime.addBinding',{name:'codexWallpaperControl'});await cdp.send('Fetch.enable',{patterns:[{urlPattern:'https://codex-wallpaper.invalid/*',requestStage:'Request'}]});await cdp.evaluate(script());entry.ready=await cdp.evaluate('Boolean(window.__codexWallpaper)');log('Attached streaming wallpaper '+target.id);
+  cdp.on('Fetch.requestPaused',event=>serve(cdp,event));cdp.on('Runtime.bindingCalled',event=>{if(event.name==='codexWallpaperControl')change(event.payload,entry);});cdp.on('Page.domContentEventFired',async()=>{entry.ready=false;await cdp.evaluate(script());entry.ready=await cdp.evaluate('Boolean(window.__codexWallpaper)');await ensureEngine(cdp);});
+  await cdp.send('Runtime.enable');await cdp.send('Page.enable');await cdp.send('Runtime.addBinding',{name:'codexWallpaperControl'});await cdp.send('Fetch.enable',{patterns:[{urlPattern:'https://codex-wallpaper.invalid/*',requestStage:'Request'}]});await cdp.evaluate(script());entry.ready=await cdp.evaluate('Boolean(window.__codexWallpaper)');await ensureEngine(cdp);log('Attached streaming wallpaper '+target.id);
 }
 let missed=0;
 async function tick(){
@@ -102,7 +140,7 @@ async function tick(){
     boundEndpoint=endpoint;const {port}=endpoint;
     const targets=await(await fetch(`http://127.0.0.1:${port}/json/list`,{signal:AbortSignal.timeout(2500)})).json();missed=0;
     for(const target of targets){if(target.type!=='page'||!target.url.startsWith('app://-/index.html'))continue;const route=new URL(target.url).searchParams.get('initialRoute')||'';if(/spotlight|avatar-overlay|screen-overlay|application-menu/.test(route))continue;if(!state.connections.has(target.id))try{await attach(target);}catch(error){state.connections.get(target.id)?.cdp.close();state.connections.delete(target.id);log(error.message);}}
-    for(const entry of state.connections.values())if(!entry.ready)try{await entry.cdp.evaluate(script());entry.ready=await entry.cdp.evaluate('Boolean(window.__codexWallpaper)');}catch{}
+    for(const entry of state.connections.values())if(!entry.ready)try{await entry.cdp.evaluate(script());entry.ready=await entry.cdp.evaluate('Boolean(window.__codexWallpaper)');await ensureEngine(entry.cdp);}catch{}
     const snapshot={pid:process.pid,startedAt,port,browserPath:endpoint.browserPath,profile,videoCount:state.library.length,version:1,ready:[...state.connections.values()].some(entry=>entry.ready),updatedAt:Date.now(),metrics};
     await fs.promises.writeFile(runtimeTemp,JSON.stringify(snapshot,null,2));await fs.promises.rename(runtimeTemp,runtimeFile);
     if(state.config.followDesktop){const id=selected();if(id&&id!==state.config.wallpaperId){state.config.wallpaperId=id;scheduleSave();await broadcast({wallpaperId:id});}}
@@ -110,4 +148,6 @@ async function tick(){
   tickTimer=setTimeout(tick,2000);
 }
 async function stop(endpointChanged=false){if(state.closed)return;state.closed=true;clearTimeout(tickTimer);await conversions.stopAll();await Promise.allSettled([...preparing.values()]);if(saveTimer)await persist();await saveQueue;for(const{cdp}of state.connections.values()){if(!endpointChanged)try{await cdp.evaluate('window.__codexWallpaper?.dispose()');await cdp.send('Fetch.disable');}catch{}cdp.close();}try{if(JSON.parse(fs.readFileSync(runtimeFile,'utf8')).pid===process.pid)fs.unlinkSync(runtimeFile);}catch{}await fs.promises.unlink(runtimeTemp).catch(()=>{});process.exit(0);}
-process.on('SIGINT',()=>stop());process.on('SIGTERM',()=>stop());log(`Ready: ${state.library.length} video wallpapers; direct ranged playback`);void tick();
+process.on('SIGINT',()=>stop());process.on('SIGTERM',()=>stop());
+const counts=state.library.reduce((all,item)=>{all[item.type]=(all[item.type]||0)+1;return all;},{});
+log(`Ready: ${state.library.length} wallpapers (video ${counts.video||0}, scene ${counts.scene||0}, web ${counts.web||0}); WebWallGL ${engineSource?'loaded':'missing'}`);void tick();

@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Scene wallpapers
+
+- Play Wallpaper Engine **scene** projects (`project.json` + `scene.pkg`) instead
+  of hiding them: the package is handed to the page and rendered by a bundled
+  WebWallGL engine (vendored MIT build in `vendor/webwallgl/`, 3.0.2).
+- Scene packages travel over DevTools in base64 chunks because the Codex page CSP
+  has no `connect-src` entry for the local media origin, so `fetch()` is blocked
+  there; `media-src`/`img-src` allow the byte-range video and poster routes.
+- Skip scene loading while the Codex window is hidden (a hidden page gets no
+  `requestAnimationFrame`, so the engine cannot produce a first frame) and load it
+  when the window becomes visible again.
+- Cards now carry a video/scene badge, the panel filters by type, and scene
+  wallpapers honour the existing pause, mute and volume controls.
+- `inventory()` reports scene projects and their package size; projects whose
+  `scene.pkg` is missing are skipped.
+- Web wallpapers stay unsupported: the page CSP allows only `frame-src 'self' blob:`,
+  so a sandboxed third-party iframe cannot be mounted without weakening Codex's
+  own policy. This is documented in the README.
+
 ### Wallpaper library panel
 
 - Replace the wallpaper dropdown with a card wall: each card shows the project's

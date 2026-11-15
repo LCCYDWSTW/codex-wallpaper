@@ -28,3 +28,19 @@ test('library panel wires cards, rating filter and a rescan request', () => {
   assert.match(css, /\.cw-card\[aria-selected="true"\]/);
   assert.match(css, /\[data-view="list"\]/);
 });
+
+test('scene wallpapers load through the vendored engine and the control channel', () => {
+  const renderer = fs.readFileSync(path.join(root, 'src/renderer.js'), 'utf8');
+  const host = fs.readFileSync(path.join(root, 'src/wallpaper-host.mjs'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'src/wallpaper.css'), 'utf8');
+  // The page cannot fetch the fake media origin (its CSP has no connect-src entry), so packages travel as base64 chunks.
+  assert.match(renderer, /_sceneRequest/);
+  assert.match(renderer, /scenePackage\(id,parts\)/);
+  assert.match(renderer, /createScene\(/);
+  assert.match(renderer, /bytesSource/);
+  assert.match(renderer, /if\(document\.hidden\)/);
+  assert.match(host, /async function pushScene/);
+  assert.match(host, /_sceneRequest/);
+  assert.match(host, /vendor',\s*'webwallgl'/);
+  assert.match(css, /#cw-scene canvas/);
+});

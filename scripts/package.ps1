@@ -6,7 +6,7 @@ $name='codex-wallpaper-v'+$version
 $dist=Join-Path $root 'dist'
 New-Item -ItemType Directory -Path $dist -Force | Out-Null
 $zip=Join-Path $dist ($name+'.zip')
-$allow=@('src','scripts','tests','.github','.gitignore','.gitattributes','package.json','config.example.json','Start.vbs','install.ps1','uninstall.ps1','README.md','README.en.md','LICENSE','CHANGELOG.md','SECURITY.md','CONTRIBUTING.md','VALIDATION.md','STABILITY_TEST.md')
+$allow=@('src','scripts','tests','vendor','.github','.gitignore','.gitattributes','package.json','config.example.json','Start.vbs','install.ps1','uninstall.ps1','README.md','README.en.md','LICENSE','CHANGELOG.md','SECURITY.md','CONTRIBUTING.md','VALIDATION.md','STABILITY_TEST.md')
 Add-Type -AssemblyName System.IO.Compression
 $stream=[IO.File]::Open($zip,[IO.FileMode]::Create)
 $archive=New-Object IO.Compression.ZipArchive($stream,[IO.Compression.ZipArchiveMode]::Create)

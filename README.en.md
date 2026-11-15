@@ -13,20 +13,23 @@ An unofficial Windows companion that plays local Wallpaper Engine **Video** wall
 ## Why this one
 
 - **No re-encode, no size cap.** Videos are streamed from the original file with byte-range reads, so 4K/120 footage plays as-is — no 1080p downscale, no per-file size limit.
-- **Switching is immediate.** Changing between video wallpapers does not require restarting Codex.
+- **Video and scene wallpapers.** Videos play straight from disk; scene projects (`scene.pkg`) are rendered live by the bundled WebWallGL engine instead of being transcoded.
+- **Switching is immediate.** Changing wallpapers does not require restarting Codex.
 - **Reuses your existing library.** Scans the Wallpaper Engine `431960` workshop folder and can follow the current desktop wallpaper; nothing to re-download or import.
-- **Pick from a thumbnail wall.** The side panel lists every video wallpaper as a card built from the project's `preview` image, with a list view, title/tag search, an optional content-rating filter and the current selection highlighted.
-- **Rescan without restarting.** The panel's Refresh button re-reads the configured workshop folders, so newly subscribed videos appear immediately.
-- **Zero runtime dependencies.** No `npm install`, no third-party runtime packages.
+- **Pick from a thumbnail wall.** The side panel lists every wallpaper as a card built from the project's `preview` image, with a list view, title/tag search, video/scene filtering, an optional content-rating filter and the current selection highlighted.
+- **Rescan without restarting.** The panel's Refresh button re-reads the configured workshop folders, so newly subscribed wallpapers appear immediately.
+- **No `npm install`.** One bundled MIT renderer file (WebWallGL, about 1.1 MB) is shipped in `vendor/`; there is no package manager and no build step.
 
 > Most comparable tools downscale video to 1080p or cap single files (commonly 128 MB). This project does neither.
 
 ## Requirements and installation
 
 - Windows 10/11, the current user's `OpenAI.Codex` MSIX package.
-- Node.js 22 or newer. No npm runtime dependencies; no `npm install` needed.
-- Existing Wallpaper Engine video projects with `project.json` and local media.
+- Node.js 22 or newer. No `npm install` needed.
+- Existing Wallpaper Engine wallpapers: video projects with `project.json` and local media, or scene projects with `project.json` and `scene.pkg`.
 - Optional FFmpeg on PATH for incompatible codecs. None of these programs or wallpapers is bundled.
+
+Web wallpapers are not supported: the Codex page CSP allows only `frame-src 'self' blob:`, so third-party iframes are blocked, and bypassing that would weaken Codex's own security policy.
 
 Fully quit Codex, extract the archive, and run in Windows PowerShell:
 
@@ -84,7 +87,9 @@ This project's source code is under the [MIT License](LICENSE), Copyright (c) 20
 
 ### Third-party rights
 
-OpenAI, Codex, ChatGPT and Wallpaper Engine names and marks belong to their respective owners. This project's MIT licence grants **no** rights to any third-party software, Wallpaper Engine workshop wallpapers, or game/anime artwork. The release contains no third-party program files or wallpaper assets.
+OpenAI, Codex, ChatGPT and Wallpaper Engine names and marks belong to their respective owners. This project's MIT licence grants **no** rights to any third-party software, Wallpaper Engine workshop wallpapers, or game/anime artwork. The release contains no wallpaper assets.
+
+It does contain one unmodified third-party program file: `vendor/webwallgl/webwallgl.global.min.js` (WebWallGL 3.0.2, MIT licence, author oneincase), which renders scene wallpapers. Its licence ships alongside it (`vendor/webwallgl/LICENSE`), and its origin is documented in `vendor/webwallgl/README.md`.
 
 This is an unofficial community extension. It is not affiliated with or endorsed by OpenAI or by the makers of Wallpaper Engine.
 

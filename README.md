@@ -15,22 +15,24 @@ Windows 上的非官方 Codex 外观伴侣：把 Wallpaper Engine 的 **Video �
 ## 为什么用它
 
 - **不压缩、不转码、不限大小。** 直接按字节区间读取壁纸原文件，4K/120 帧照样播放 —— 不会先转成 1080p，也没有单文件体积上限。
-- **切换即时生效。** 视频壁纸之间切换不需要重启 Codex。
+- **视频和场景壁纸都能放。** 视频走原文件直读，场景壁纸（`scene.pkg`）交给内置的 WebWallGL 引擎实时渲染，同样不转码。
+- **切换即时生效。** 壁纸之间切换不需要重启 Codex。
 - **复用你已有的库。** 直接扫描 Wallpaper Engine 的 `431960` 创意工坊目录，可跟随主屏当前壁纸，无需重新下载或导入。
-- **零运行时依赖。** 不需要 `npm install`，没有第三方运行时包。
+- **不需要 `npm install`。** 只有一份随包附带的 MIT 渲染器文件（WebWallGL，约 1.1 MB），没有包管理器、没有构建步骤。
 
 > 多数同类工具会先把视频降为 1080p，或限制单文件大小（常见为 128 MB）；本项目不做这两件事。
 
 ## 功能
 
 - 静音循环播放本机 Video 壁纸；从本地按区间读取，避免先复制整个大视频。
-- 侧栏用缩略图卡片墙列出壁纸（缩略图直接读 Wallpaper Engine 项目里的 `preview`），可切换列表视图，可按标题或标签搜索。
-- 侧栏「刷新」重新扫描创意工坊目录：新下载的视频壁纸立刻出现在列表里，不需要重启 Codex 或壁纸进程。
+- 场景（Scene）壁纸直接播放：读取项目里的 `scene.pkg`，用内置的 WebWallGL 引擎在页面里实时渲染图层、粒子与脚本，不需要转码成视频。
+- 侧栏用缩略图卡片墙列出壁纸（缩略图直接读 Wallpaper Engine 项目里的 `preview`），可切换列表视图，可按标题或标签搜索，并按视频/场景筛选。
+- 侧栏「刷新」重新扫描创意工坊目录：新下载的壁纸立刻出现在列表里，不需要重启 Codex 或壁纸进程。
 - 壁纸存在非 Everyone 分级时出现「内容分级」筛选；当前选中的壁纸高亮显示。
 - 右上角图片按钮打开侧边设置，支持暗化、面板雾化、面板底色、暂停和恢复原版外观。
-- 可选壁纸声音与音量滑条（默认静音）；关掉 Codex 窗口时视频随窗口隐藏而暂停。
+- 可选壁纸声音与音量滑条（默认静音）；关掉 Codex 窗口时视频随窗口隐藏而暂停，场景壁纸在窗口重新可见时自动加载。
 - 拖动滑条时合并画面更新，暂停背景视频以减少竞争，停止拖动后恢复。
-- 可选跟随 Wallpaper Engine 主屏所选视频；不依赖 Wallpaper Engine 窗口保持打开。
+- 可选跟随 Wallpaper Engine 主屏所选壁纸（视频或场景）；不依赖 Wallpaper Engine 窗口保持打开。
 - 可选 Windows 登录启动，只启用壁纸入口，备份并关闭原版 Codex 的重复登录任务。
 - 安装时发现 Node.js、Codex 商店安装位置和 Steam 游戏库；支持手动指定库目录。
 
@@ -38,10 +40,12 @@ Windows 上的非官方 Codex 外观伴侣：把 Wallpaper Engine 的 **Video �
 
 - Windows 10/11，当前用户安装的 **MSIX 版 Codex**，包名 `OpenAI.Codex`。
 - Node.js **22 或更高版本**，安装程序能从 PATH 找到 `node.exe`，或使用 `-NodePath` 指定。
-- 本机已有 Wallpaper Engine 视频壁纸，每个项目包含 `project.json` 以及项目内的视频文件。
+- 本机已有 Wallpaper Engine 壁纸：视频项目包含 `project.json` 与视频文件，场景项目包含 `project.json` 与 `scene.pkg`。
 - FFmpeg 可选：正常支持的视频直接播放；编码不兼容时才调用 FFmpeg 转换。若需要此功能，请自行安装 FFmpeg 并加入 PATH。
 
-没有 npm 运行时依赖，**不需要运行 npm install**。不提供 Codex、Node.js、FFmpeg 或任何壁纸资源。
+不需要 `npm install`，发行包自带一份 MIT 许可的 WebWallGL 渲染器（`vendor/webwallgl/`）用于场景壁纸。不提供 Codex、Node.js、FFmpeg 或任何壁纸资源。
+
+网页（Web）壁纸暂不支持：Codex 页面的 CSP 只允许 `frame-src 'self' blob:`，第三方来源的 iframe 会被拦截，而这无法在不削弱 Codex 自身安全策略的前提下绕过。
 
 ## 安装
 
@@ -157,7 +161,9 @@ Codex 接入层为本项目**独立实现**。两者的运行环境与技术路�
 
 ### 第三方权利
 
-OpenAI、Codex、ChatGPT、Wallpaper Engine 等名称与标识归其权利人所有；本项目的 MIT 许可**不授予**任何第三方软件、Wallpaper Engine 订阅壁纸或游戏/动漫素材的使用与分发权利。发行包内不含任何第三方程序文件或壁纸资源。
+OpenAI、Codex、ChatGPT、Wallpaper Engine 等名称与标识归其权利人所有；本项目的 MIT 许可**不授予**任何第三方软件、Wallpaper Engine 订阅壁纸或游戏/动漫素材的使用与分发权利。发行包内不含任何壁纸资源。
+
+发行包内含一份未修改的第三方程序文件：`vendor/webwallgl/webwallgl.global.min.js`（WebWallGL 3.0.2，MIT 许可，作者 oneincase），用于渲染场景壁纸；其许可证随文件一同分发（`vendor/webwallgl/LICENSE`），来源与用途见 `vendor/webwallgl/README.md`。
 
 本项目为非官方社区扩展，与 OpenAI 及 Wallpaper Engine 的开发者无隶属关系，也未获其背书。
 

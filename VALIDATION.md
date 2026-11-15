@@ -128,3 +128,41 @@ button, search, a content-rating filter and an optional audio toggle:
 Not covered by this run: the panel inside a visible Codex window on a real
 display, Scene and Web wallpapers (still unsupported), and audible output through
 real speakers.
+
+## Scene wallpaper verification — 2026-11-15
+
+Scene projects are now rendered by the vendored WebWallGL engine instead of being
+excluded from the library.
+
+- `inventory()` reports **198** playable projects from this machine's workshop
+  folder: 72 video and 126 scene. The folder holds 213 projects; the 9 web projects
+  stay unsupported (see below) and 2 scene folders were skipped because their
+  `scene.pkg` is missing.
+- The page CSP (`default-src 'none'`) has no `connect-src` entry for
+  `codex-wallpaper.invalid`, so `fetch()` and `XMLHttpRequest` to the media origin
+  fail with `TypeError: Failed to fetch`, while `media-src`/`img-src` let the video
+  and poster routes through. Scene packages therefore travel from the helper over
+  DevTools in 512 KB base64 chunks (a 25 MB package took about three seconds) and
+  are assembled into an `ArrayBuffer` in the page.
+- A hidden Codex window receives no `requestAnimationFrame`, and the engine reports
+  `mount 首帧超时（60000ms）` there. The renderer now skips scene loading while
+  `document.hidden` is true, shows `打开 Codex 窗口后加载场景壁纸`, and loads the
+  scene when the window becomes visible.
+- The engine path itself was verified with a real package: a headless Chrome page
+  loading `vendor/webwallgl/webwallgl.global.min.js` and a 608 KB `scene.pkg` from
+  this machine's library through `WebWallGL.createScene` + `bytesSource` produced a
+  rendered 800 x 450 first frame (layers, city backdrop and snow particles). That
+  screenshot is not committed.
+- Live check on the installed build (Codex MSIX 26.1027.3384.0, Node.js 24.20.0):
+  the 198 cards carry video/scene badges, the engine reports
+  `Boolean(globalThis.WebWallGL) === true` after injection, and the helper log
+  records `Scene package delivered` when a scene card is selected.
+- `npm test` passed 35 of 36 cases (the skipped case is the Linux-only child-process
+  shutdown test) and `npm run check` passed.
+
+Not covered: a scene wallpaper observed inside a visible Codex window on a real
+display (the window was in the tray for every automated check), scene audio, and
+performance on heavier scene packages (the largest package in this library is
+16 MB). Web wallpapers remain unsupported: the page CSP allows only
+`frame-src 'self' blob:`, so a sandboxed third-party iframe cannot be mounted
+without disabling CSP for the whole Codex window, which this project does not do.

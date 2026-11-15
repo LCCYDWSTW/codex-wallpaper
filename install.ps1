@@ -53,7 +53,7 @@ try {
     Move-Item -LiteralPath $appRoot -Destination $previous
   }
   New-Item -ItemType Directory -Path $appRoot -Force | Out-Null
-  foreach($item in @('src','scripts','Start.vbs','uninstall.ps1','README.md','README.en.md','LICENSE')){Copy-Item -LiteralPath (Join-Path $PSScriptRoot $item) -Destination $appRoot -Recurse -Force}
+  foreach($item in @('src','vendor','scripts','Start.vbs','uninstall.ps1','README.md','README.en.md','LICENSE')){Copy-Item -LiteralPath (Join-Path $PSScriptRoot $item) -Destination $appRoot -Recurse -Force}
   $configPath=Join-Path $dataRoot 'config.json'
   if(Test-Path -LiteralPath $configPath){Copy-Item -LiteralPath $configPath -Destination (Join-Path $dataRoot ('config-backup-'+[guid]::NewGuid().ToString('N')+'.json'))}
   $config | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $configPath -Encoding UTF8

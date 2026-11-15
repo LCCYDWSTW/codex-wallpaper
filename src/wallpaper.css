@@ -83,3 +83,9 @@ html[data-codex-wallpaper="on"] [class*="_MainContentTopFade_"] { opacity:0 !imp
 .cw-grid[data-view="list"] .cw-card-title { min-height:0; padding:0 4px 0 0; font-size:12px; }
 .cw-grid[data-view="list"] .cw-card-text { -webkit-line-clamp:1; }
 #cw-panel .cw-count { margin:0; color:#9fb3cb; font-size:11px; }
+#cw-scene { position:absolute; inset:0; }
+#cw-scene canvas { display:block; width:100%; height:100%; }
+#cw-scene iframe { display:block; width:100%; height:100%; border:0; background:transparent; }
+.cw-card-kind { position:absolute; top:4px; left:4px; padding:1px 5px; border-radius:6px; background:#0c1622cc; color:#bfe0ff; font-size:10px; line-height:1.5; pointer-events:none; }
+.cw-card-kind[data-kind="scene"] { color:#ffd9a8; }
+.cw-card-kind[data-kind="web"] { color:#b8f0c8; }
