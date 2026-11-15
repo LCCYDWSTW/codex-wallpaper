@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Verification notes
+
+- Sign-in startup verified on 2026-11-15 with Codex MSIX 26.1027.3384.0 and
+  Node.js 24.20.0: after a real sign-in the logon shortcut started Codex and the
+  wallpaper helper, the helper reported ready with 72 video wallpapers, and the
+  injected wallpaper element loaded a 3840 x 2160 video from the local media
+  route. Details in `VALIDATION.md`.
+- Documentation only. No runtime code changed and no new release is published.
+
 ## 0.1.0 — 2026-10-28
 
 - Initial experimental Windows source release, extracted from a local prototype.

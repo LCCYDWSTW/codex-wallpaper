@@ -17,12 +17,12 @@ The separate local prototype displayed decoded 1920 x 1080 video and a single to
 ## Still requires real-user acceptance
 
 - A clean installation and uninstall on a separate Windows account or PC.
-- An actual Windows sign-in/reboot with the release installed, including whether another launcher or Windows app restoration starts ordinary Codex.
+- ~~An actual Windows sign-in/reboot with the release installed, including whether another launcher or Windows app restoration starts ordinary Codex.~~ Verified on 2026-11-15; see "Sign-in startup verification" below.
 - UI compatibility across different Codex builds, locales and layouts.
 - Optional FFmpeg conversion across different GPU drivers and codecs.
 - Node.js 22 CI execution (local verification used Node.js 24; CI is configured for 22 and 24).
 
-The delivered source package has not been pushed to GitHub, so remote CI and Release workflows have not run. No frame-zero wallpaper or universal compatibility claim is made.
+The source is published at `github.com/LCCYDWSTW/codex-wallpaper`. The `Check` and `Release source` workflows passed for the pushed `main`, and `v0.1.0` is published as a pre-release with the packaged ZIP and its SHA-256 file. No frame-zero wallpaper or universal compatibility claim is made.
 
 
 ## Local stability patch checks (after original 0.1.0)
@@ -77,3 +77,29 @@ Not covered by this acceptance run: sign-in/reboot integration, an actual
 FFmpeg conversion failure, conversion-in-progress shutdown, long-duration
 CPU/GPU/memory measurements, and full-window reload (the application did not
 respond to Ctrl+R). These remain documented release limitations.
+
+## Sign-in startup verification — 2026-11-15
+
+The sign-in integration listed as outstanding above was exercised on the installed
+release after a real Windows sign-in, with Codex MSIX 26.1027.3384.0 and
+Node.js 24.20.0:
+
+- The machine booted at 15:59:34; the logon shortcut started the launcher, which
+  logged `Starting at logon` at 16:00:23, started Codex, and logged
+  `Wallpaper ready on local port 57829` at 16:00:31. The wallpaper helper was
+  still running 26 minutes later.
+- The helper's runtime status reported `ready: true` and 72 video wallpapers in
+  the configured Steam library.
+- A read-only DevTools inspection of the live Codex window found the injected
+  wallpaper root and one media element loaded from
+  `https://codex-wallpaper.invalid/media/...` at 3840 x 2160 with `readyState` 4.
+- The window was closed to the tray during that inspection, so the page reported
+  `hidden` and playback was paused. Both are the documented behaviour while the
+  window is not visible.
+- `launcher-error.log` and `host-error.log` gained no entries from this sign-in.
+- The test suite passed on the same machine: 32 tests run, one skipped because its
+  child-process shutdown path is exercised only on Linux.
+
+Not covered by this run: uninstall on a separate Windows account or PC, UI
+compatibility across other Codex builds, locales and layouts, optional FFmpeg
+conversion on other GPU drivers, and full-window reload.
