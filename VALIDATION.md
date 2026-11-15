@@ -216,3 +216,25 @@ Codex running in the tray and the helper attached:
 
 Still outstanding: a clean install and uninstall on a separate Windows account or
 another PC.
+
+## Zero-state install verification — 2026-11-15
+
+The whole `%LOCALAPPDATA%\CodexWallpaper` folder was deleted (after a clean uninstall,
+with `config.json`, `settings.json`, the logs and `install-state.json` backed up
+first) so the first-install path ran with no previous state at all:
+
+- `install.ps1 -EnableStartup` finished in 1.7 s and produced the app folder
+  (including `vendor/`), a fresh `config.json`, three shortcuts and a new
+  `install-state.json` that records the native task's original `State=2`; the task
+  itself moved to `1`.
+- No `settings.json` existed afterwards, which is expected because the helper writes
+  it on the first setting change. The first run still loaded 198 wallpapers and
+  followed the desktop wallpaper (`Bliss&DJGun`, a scene) at 2560 x 1380.
+- `uninstall.ps1` on that fresh install removed all three shortcuts, restored the
+  native task to `State=2` and archived `install-state.json`.
+- Reinstalling and copying the backed-up `settings.json` back matched the pre-test
+  snapshot exactly: same shortcut targets and arguments, same native task state
+  (`1`, with `2` recorded), identical `config.json` and `settings.json`.
+- Codex was never restarted: the launcher reused the running instance
+  (`Starting` followed by `Started helper`, no `Started Codex`) and the main process
+  kept its original start time.
